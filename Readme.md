@@ -218,12 +218,11 @@ frontend/
 ├── src/
 │   ├── assets/
 │   ├── components/
-│   ├── context/
-│   ├── layouts/
+│   ├── context/│
 │   ├── pages/
 │   ├── utils/
 │   │
-│   ├── App.css
+│   ├
 │   ├── App.jsx
 │   ├── index.css
 │   ├── main.jsx
