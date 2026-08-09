@@ -2,7 +2,7 @@ node_modules/
 .env
 .env.*
 !.env.example
-!index.txt
+index.txt
 dist/
 build/
 .vite/
