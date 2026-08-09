@@ -1,0 +1,379 @@
+/* ==========================================================
+   MEAL PAGE
+========================================================== */
+
+.meal-page {
+  position: relative;
+  min-height: 100vh;
+  padding: 90px 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fff8f1 0%, #fff2e8 45%, #ffe8d2 100%);
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* ==========================================================
+   Background Blobs
+========================================================== */
+
+.meal-bg {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  z-index: 0;
+}
+
+.blob1 {
+  width: 280px;
+  height: 280px;
+  background: rgba(245, 121, 58, 0.25);
+  top: -80px;
+  left: -80px;
+}
+
+.blob2 {
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 183, 77, 0.28);
+  bottom: -60px;
+  right: -60px;
+}
+
+.meal-container {
+  position: relative;
+  z-index: 2;
+  max-width: 1300px;
+  margin: auto;
+}
+
+/* ==========================================================
+   Hero
+========================================================== */
+
+.meal-header {
+  text-align: center;
+  margin-bottom: 45px;
+}
+
+.meal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #e66b22;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 10px 25px rgba(245, 121, 58, 0.12);
+}
+
+.meal-header h1 {
+  margin-top: 22px;
+  font-size: 46px;
+  font-weight: 800;
+  color: #222;
+}
+
+.meal-header h1 span {
+  color: #f5793a;
+}
+
+.meal-header p {
+  max-width: 650px;
+  margin: 18px auto 0;
+  color: #777;
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+/* ==========================================================
+   Search
+========================================================== */
+
+.meal-search {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  border-radius: 18px;
+  padding: 16px 22px;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+}
+
+.meal-search svg {
+  color: #f5793a;
+  font-size: 18px;
+}
+
+.meal-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: #222;
+}
+
+.meal-search input::placeholder {
+  color: #999;
+}
+
+/* ==========================================================
+   Filters
+========================================================== */
+
+.meal-filters {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.meal-filters button {
+  border: none;
+  background: #fff;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 0.35s;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+}
+
+.meal-filters button:hover {
+  transform: translateY(-3px);
+  color: #f5793a;
+}
+
+.meal-filters button.active {
+  background: linear-gradient(135deg, #f5793a, #e95d14);
+  color: white;
+}
+
+/* ==========================================================
+   Count
+========================================================== */
+
+.meal-count {
+  margin-bottom: 35px;
+  text-align: center;
+  color: #777;
+  font-size: 15px;
+}
+
+.meal-count span {
+  color: #f5793a;
+  font-weight: 800;
+}
+
+/* ==========================================================
+   Grid
+========================================================== */
+
+.meal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+/* ==========================================================
+   EMPTY STATE
+========================================================== */
+
+.meal-empty {
+  width: 100%;
+  padding: 80px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px);
+  border-radius: 28px;
+  border: 1px solid rgba(245, 121, 58, 0.12);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
+}
+
+.meal-empty-icon {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  background: linear-gradient(135deg, #f5793a, #ffb56b);
+  color: #fff;
+  box-shadow: 0 18px 35px rgba(245, 121, 58, 0.28);
+}
+
+.meal-empty h2 {
+  color: #222;
+  font-size: 30px;
+  margin-bottom: 12px;
+}
+
+.meal-empty p {
+  color: #777;
+  font-size: 15px;
+  max-width: 420px;
+  margin: auto;
+  line-height: 1.7;
+}
+
+/* ==========================================================
+   SKELETON
+========================================================== */
+
+.meal-card-skeleton {
+  background: #fff;
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.skeleton-circle {
+  width: 180px;
+  height: 180px;
+  margin: auto;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #ececec 25%, #f6f6f6 50%, #ececec 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite linear;
+}
+
+.skeleton-line {
+  height: 13px;
+  margin: 18px auto;
+  border-radius: 50px;
+  background: linear-gradient(90deg, #ececec 25%, #f6f6f6 50%, #ececec 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite linear;
+}
+
+.skeleton-w80 {
+  width: 80%;
+}
+
+.skeleton-w60 {
+  width: 60%;
+}
+
+.skeleton-w40 {
+  width: 40%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ==========================================================
+   SCROLL ANIMATION
+========================================================== */
+
+.meal-header,
+.meal-search,
+.meal-filters,
+.meal-count,
+.meal-grid,
+.meal-empty {
+  animation: fadeUp 0.7s ease both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================
+   CUSTOM SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #f5793a;
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fff5ed;
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width: 1100px) {
+  .meal-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .meal-page {
+    padding: 70px 16px;
+  }
+
+  .meal-header h1 {
+    font-size: 36px;
+  }
+
+  .meal-header p {
+    font-size: 14px;
+  }
+
+  .meal-search {
+    padding: 14px 18px;
+  }
+
+  .meal-filters {
+    gap: 10px;
+  }
+
+  .meal-filters button {
+    padding: 11px 18px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .meal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-header h1 {
+    font-size: 30px;
+  }
+
+  .meal-tag {
+    font-size: 12px;
+  }
+
+  .meal-empty {
+    padding: 60px 18px;
+  }
+
+  .skeleton-circle {
+    width: 150px;
+    height: 150px;
+  }
+}

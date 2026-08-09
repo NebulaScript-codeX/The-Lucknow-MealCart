@@ -1,0 +1,325 @@
+/* ============================================================
+   SHARED ADMIN DESIGN TOKENS
+   Import this once in your Admin layout (e.g. AdminLayout.jsx)
+   so every admin page shares the same variables.
+   ============================================================ */
+
+:root {
+  --admin-orange: #ff6b1a;
+  --admin-orange-dark: #e2560f;
+  --admin-orange-light: #fff1e8;
+  --admin-black: #141414;
+  --admin-white: #ffffff;
+  --admin-bg: #faf9f8;
+  --admin-border: #ececec;
+  --admin-text-dark: #1a1a1a;
+  --admin-text-muted: #7a7a7a;
+  --admin-success: #1c8a47;
+  --admin-success-bg: #eaf9ef;
+  --admin-danger: #d84343;
+  --admin-danger-bg: #fdecec;
+  --admin-warning: #d98b12;
+  --admin-warning-bg: #fff6e5;
+}
+
+/* ============ COMMON PAGE SHELL ============ */
+.admin-page {
+  padding: 32px 36px 60px;
+  background: var(--admin-bg);
+  min-height: 100vh;
+  animation: adminPageIn 0.4s ease;
+}
+
+@keyframes adminPageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-page-header {
+  margin-bottom: 28px;
+}
+
+.admin-page-header h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--admin-text-dark);
+  margin-bottom: 4px;
+}
+
+.admin-page-header p {
+  color: var(--admin-text-muted);
+  font-size: 14px;
+}
+
+/* ============ STAT CARDS (Dashboard/Analytics) ============ */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.admin-stat-card {
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: statCardIn 0.5s ease forwards;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+@keyframes statCardIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(20, 20, 20, 0.08);
+}
+
+.admin-stat-label {
+  font-size: 13px;
+  color: var(--admin-text-muted);
+  font-weight: 600;
+}
+
+.admin-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--admin-text-dark);
+}
+
+.admin-skeleton-text {
+  display: inline-block;
+  width: 60px;
+  height: 20px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 37%, #f0f0f0 63%);
+  background-size: 400% 100%;
+  animation: adminShimmer 1.4s ease infinite;
+}
+
+@keyframes adminShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ============ TABLE (Customers/Providers/Kitchens/Meals/Orders/Subscriptions) ============ */
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 260px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-search-bar:focus-within {
+  border-color: var(--admin-orange);
+  box-shadow: 0 0 0 3px rgba(255, 107, 26, 0.1);
+}
+
+.admin-search-bar svg {
+  color: var(--admin-orange);
+  flex-shrink: 0;
+}
+
+.admin-search-bar input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+  background: transparent;
+  color: var(--admin-text-dark);
+}
+
+.admin-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: var(--admin-black);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 11px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.2s ease;
+}
+
+.admin-primary-btn:hover {
+  background: var(--admin-orange-dark);
+  transform: translateY(-2px);
+}
+
+.admin-table-wrap {
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table thead {
+  background: var(--admin-orange-light);
+}
+
+.admin-table th {
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--admin-orange-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 14px 18px;
+}
+
+.admin-table td {
+  padding: 14px 18px;
+  font-size: 14px;
+  color: var(--admin-text-dark);
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+  background: #fffaf6;
+}
+
+/* ============ STATUS BADGES ============ */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.admin-badge-success { background: var(--admin-success-bg); color: var(--admin-success); }
+.admin-badge-danger { background: var(--admin-danger-bg); color: var(--admin-danger); }
+.admin-badge-warning { background: var(--admin-warning-bg); color: var(--admin-warning); }
+.admin-badge-neutral { background: #f0f0f0; color: var(--admin-text-muted); }
+
+/* ============ ACTION BUTTONS (icon buttons in table rows) ============ */
+.admin-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-white);
+  color: var(--admin-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-icon-btn:hover {
+  border-color: var(--admin-orange);
+  color: var(--admin-orange-dark);
+  background: var(--admin-orange-light);
+}
+
+.admin-icon-btn.danger:hover {
+  border-color: var(--admin-danger);
+  color: var(--admin-danger);
+  background: var(--admin-danger-bg);
+}
+
+/* ============ EMPTY / ERROR / LOADING STATES ============ */
+.admin-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--admin-text-muted);
+}
+
+.admin-error-banner {
+  background: var(--admin-danger-bg);
+  color: var(--admin-danger);
+  border: 1px solid #f6c8c8;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* ============ FORM / SETTINGS ============ */
+.admin-form-card {
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  padding: 26px;
+  max-width: 640px;
+}
+
+.admin-form-group {
+  margin-bottom: 18px;
+}
+
+.admin-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--admin-text-dark);
+  margin-bottom: 7px;
+}
+
+.admin-form-group input,
+.admin-form-group select,
+.admin-form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--admin-border);
+  outline: none;
+  font-size: 14px;
+  color: var(--admin-text-dark);
+  background: #fafafa;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-form-group input:focus,
+.admin-form-group select:focus,
+.admin-form-group textarea:focus {
+  border-color: var(--admin-orange);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 107, 26, 0.1);
+}
+
+@media (max-width: 768px) {
+  .admin-page { padding: 22px 18px 50px; }
+  .admin-search-bar { min-width: 100%; }
+}

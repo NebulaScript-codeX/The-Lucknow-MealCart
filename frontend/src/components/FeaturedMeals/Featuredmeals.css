@@ -1,0 +1,513 @@
+.featured-meals {
+  position: relative;
+  padding: 80px 24px;
+  background: linear-gradient(135deg, #fff6ec 0%, #fdf0e2 45%, #fbe4d0 100%);
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* Decorative soft glow blobs behind the section */
+.featured-meals::before,
+.featured-meals::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.featured-meals::before {
+  width: 260px;
+  height: 260px;
+  background: #ffb877;
+  top: -80px;
+  left: -80px;
+}
+
+.featured-meals::after {
+  width: 220px;
+  height: 220px;
+  background: #f5793a;
+  bottom: -70px;
+  right: -60px;
+  opacity: 0.25;
+}
+
+.featured-meals-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ---------- Scroll reveal ---------- */
+.featured-meals-header,
+.carousel-arrow,
+.carousel-slide {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+.featured-meals.in-view .featured-meals-header {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.featured-meals.in-view .carousel-arrow {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.15s;
+}
+
+.featured-meals.in-view .carousel-slide {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger each card's entrance using its inline animationDelay
+   (repurposed here as transition-delay via CSS var fallback) */
+.featured-meals.in-view .carousel-slide:nth-child(1) {
+  transition-delay: 0.05s;
+}
+.featured-meals.in-view .carousel-slide:nth-child(2) {
+  transition-delay: 0.15s;
+}
+.featured-meals.in-view .carousel-slide:nth-child(3) {
+  transition-delay: 0.25s;
+}
+
+/* ---------- Header ---------- */
+.featured-meals-header {
+  text-align: center;
+  margin: 0 auto 48px;
+  max-width: 560px;
+}
+
+.featured-meals-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #e0551a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(224, 85, 26, 0.18);
+  margin-bottom: 16px;
+}
+
+.featured-meals-title {
+  margin: 0 0 10px;
+  font-size: 34px;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.5px;
+}
+
+.featured-meals-title span {
+  color: #f5793a;
+  position: relative;
+}
+
+.featured-meals-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a3805a;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* ---------- Carousel shell ---------- */
+.featured-meals-carousel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.carousel-arrow {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #f5793a, #e0551a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(224, 85, 26, 0.35);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.carousel-arrow:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 14px 28px rgba(224, 85, 26, 0.45);
+}
+
+.carousel-arrow:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.carousel-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.carousel-viewport {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 28px;
+  transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* When there are fewer meals than the visible slots, center them
+   instead of stretching across an empty grid */
+.carousel-track-center {
+  justify-content: center;
+}
+
+.carousel-slide {
+  min-width: 0;
+}
+
+/* ---------- Meal card ---------- */
+.meal-card {
+  position: relative;
+  background: #fdfaf6;
+  border-radius: 22px;
+  padding: 18px 18px 20px;
+  box-shadow: 0 10px 28px rgba(120, 70, 20, 0.08);
+  border: 1px solid rgba(245, 121, 58, 0.08);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.meal-card:hover {
+  transform: translateY(-10px) scale(1.015);
+  box-shadow: 0 26px 48px rgba(120, 70, 20, 0.2);
+  border-color: rgba(245, 121, 58, 0.25);
+}
+
+.meal-card-photo-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 16px;
+  box-shadow: 0 12px 26px rgba(120, 70, 20, 0.18);
+  transition: box-shadow 0.35s ease;
+}
+
+.meal-card:hover .meal-card-photo-wrap {
+  box-shadow:
+    0 18px 36px rgba(224, 85, 26, 0.32),
+    0 0 0 6px rgba(245, 121, 58, 0.12);
+}
+
+.meal-card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.meal-card:hover .meal-card-photo {
+  transform: scale(1.12) rotate(2deg);
+}
+
+.meal-card-fav {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+
+  width: 38px;
+  height: 38px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 50;
+
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+
+  transition: 0.3s;
+}
+
+.meal-card-fav:hover {
+  transform: scale(1.15);
+}
+
+.meal-card-fav.active {
+  color: #f5793a;
+  animation: fav-pop 0.35s ease;
+}
+.meal-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@keyframes fav-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.meal-card-rating {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.meal-card-body {
+  text-align: center;
+}
+
+.meal-card-name {
+  margin: 0 0 4px;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #1a1a1a;
+  transition: color 0.25s ease;
+}
+
+.meal-card:hover .meal-card-name {
+  color: #e0551a;
+}
+
+.meal-card-kitchen {
+  margin: 0 0 18px;
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+}
+
+.meal-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.meal-card-price {
+  font-size: 17px;
+  font-weight: 800;
+  color: #1a1a1a;
+  transition: transform 0.25s ease;
+}
+
+.meal-card:hover .meal-card-price {
+  transform: scale(1.08);
+}
+
+.meal-card-add {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #f5793a, #e0551a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(224, 85, 26, 0.32);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.meal-card-add:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(224, 85, 26, 0.42);
+}
+
+.meal-card-add:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.meal-card-add-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Empty / error state ---------- */
+.featured-meals-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 60px 20px;
+  color: #a08060;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.featured-meals-empty-icon {
+  font-size: 30px;
+  opacity: 0.7;
+}
+
+/* ---------- Loading skeleton ---------- */
+.meal-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.skeleton-circle {
+  width: 160px;
+  height: 160px;
+  max-width: 100%;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f2e6d8 0%, #f8ede0 50%, #f2e6d8 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f2e6d8 0%, #f8ede0 50%, #f2e6d8 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-w60 {
+  width: 60%;
+}
+
+.skeleton-w80 {
+  width: 80%;
+}
+
+.skeleton-w40 {
+  width: 40%;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .carousel-slide {
+    flex: 0 0 calc((100% - 28px) / 2);
+  }
+}
+
+@media (max-width: 600px) {
+  .carousel-slide {
+    flex: 0 0 100%;
+  }
+
+  .carousel-arrow {
+    width: 38px;
+    height: 38px;
+  }
+
+  .featured-meals {
+    padding: 50px 16px;
+  }
+}
+/* ===========================
+   Veg / Non Veg Badge
+=========================== */
+
+.meal-card-type {
+  width: 22px;
+  height: 22px;
+
+  border-radius: 4px;
+  background: #fff;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  flex-shrink: 0;
+}
+
+.meal-card-type span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.meal-card-type.veg {
+  border: 2px solid #1ba94c;
+}
+
+.meal-card-type.veg span {
+  background: #1ba94c;
+}
+
+.meal-card-type.nonveg {
+  border: 2px solid #d62828;
+}
+
+.meal-card-type.nonveg span {
+  background: #d62828;
+}

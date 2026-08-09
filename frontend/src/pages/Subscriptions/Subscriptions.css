@@ -1,0 +1,599 @@
+
+:root {
+  --mc-orange: #ff5b1a;
+  --mc-orange-dark: #e8600a;
+  --mc-orange-light: #ffb37a;
+  --mc-orange-pale: #fff1e6;
+  --mc-white: #ffffff;
+  --mc-ink: #2b1c13;
+  --mc-muted: #8a7768;
+  --mc-success: #1fa96a;
+  --mc-danger: #e14b4b;
+  --mc-shadow: 0 10px 30px rgba(232, 96, 10, 0.15);
+  --mc-shadow-hover: 0 20px 45px rgba(232, 96, 10, 0.28);
+  --mc-radius: 20px;
+}
+
+/* ---------- Page shell ---------- */
+
+.subs-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 0%, #fff6ee 0%, transparent 45%),
+    radial-gradient(circle at 90% 10%, #ffe6d1 0%, transparent 40%),
+    linear-gradient(180deg, #fffdfb 0%, #fff9f4 100%);
+  padding: 48px 20px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.subs-page::before {
+  content: "";
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 122, 26, 0.18),
+    transparent 70%
+  );
+  animation: mc-float-blob 9s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.subs-page::after {
+  content: "";
+  position: absolute;
+  bottom: -140px;
+  left: -140px;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 179, 122, 0.22),
+    transparent 70%
+  );
+  animation: mc-float-blob 11s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+@keyframes mc-float-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -25px) scale(1.08);
+  }
+}
+
+.subs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Header ---------- */
+
+.subs-top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 40px;
+  animation: mc-fade-drop 0.6s ease both;
+}
+
+.subs-top h1 {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800;
+  color: var(--mc-ink);
+  margin: 0;
+  letter-spacing: -0.02em;
+  background: linear-gradient(
+    100deg,
+    var(--mc-ink) 30%,
+    var(--mc-orange-dark) 60%,
+    var(--mc-orange) 90%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: mc-shine-text 5s linear infinite;
+}
+
+@keyframes mc-shine-text {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.subs-subheading {
+  color: var(--mc-muted);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+@keyframes mc-fade-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Grid ---------- */
+
+.subs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 26px;
+}
+
+/* ---------- Plan Card ---------- */
+
+.plan-card {
+  position: relative;
+  background: var(--mc-white);
+  border: 1px solid rgba(255, 122, 26, 0.12);
+  border-radius: var(--mc-radius);
+  padding: 26px;
+  box-shadow: var(--mc-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.4s ease;
+}
+
+.plan-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    var(--mc-orange),
+    transparent 40%,
+    transparent 60%,
+    var(--mc-orange-light)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.plan-card:hover {
+  transform: translateY(-10px) scale(1.015);
+  box-shadow: var(--mc-shadow-hover);
+  border-color: transparent;
+}
+
+.plan-card:hover::before {
+  opacity: 1;
+}
+
+.plan-card.is-subscribed {
+  border-color: var(--mc-success);
+  box-shadow: 0 10px 30px rgba(31, 169, 106, 0.18);
+}
+
+/* Staggered entrance shimmer sweep on load */
+.plan-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: mc-card-sweep 2.6s ease-in-out 0.3s 1;
+  pointer-events: none;
+}
+
+@keyframes mc-card-sweep {
+  0% {
+    left: -60%;
+  }
+  100% {
+    left: 130%;
+  }
+}
+
+/* ---------- Subscribed badge ---------- */
+
+.subscribed-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--mc-success), #17c477);
+  color: var(--mc-white);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(31, 169, 106, 0.35);
+  animation:
+    mc-badge-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    mc-badge-pulse 2.4s ease-in-out 0.6s infinite;
+}
+
+@keyframes mc-badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes mc-badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgba(31, 169, 106, 0.35);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(31, 169, 106, 0.6);
+  }
+}
+
+/* ---------- Card head ---------- */
+
+.plan-card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.plan-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--mc-orange), var(--mc-orange-dark));
+  color: var(--mc-white);
+  font-size: 20px;
+  box-shadow: 0 6px 16px rgba(232, 96, 10, 0.35);
+  transition: transform 0.4s ease;
+}
+
+.plan-card:hover .plan-icon {
+  transform: rotate(-8deg) scale(1.08);
+  animation: mc-icon-wiggle 1.2s ease-in-out infinite;
+}
+
+@keyframes mc-icon-wiggle {
+  0%,
+  100% {
+    transform: rotate(-8deg) scale(1.08);
+  }
+  50% {
+    transform: rotate(6deg) scale(1.08);
+  }
+}
+
+.plan-card-head h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--mc-ink);
+}
+
+.plan-kitchen-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mc-orange-dark);
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  transition:
+    border-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.plan-kitchen-link:hover {
+  border-color: var(--mc-orange-dark);
+  color: var(--mc-orange);
+}
+
+/* ---------- Description / meta ---------- */
+
+.plan-desc {
+  color: var(--mc-muted);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.plan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.plan-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--mc-orange-pale);
+  color: var(--mc-orange-dark);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease;
+}
+
+.plan-card:hover .plan-meta span {
+  background: #ffe4cc;
+  transform: translateY(-1px);
+}
+
+.plan-total-meals {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mc-success);
+  background: rgba(31, 169, 106, 0.08);
+  padding: 6px 10px;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+/* ---------- Price ---------- */
+
+.plan-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.plan-price {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--mc-ink);
+  letter-spacing: -0.02em;
+}
+
+.plan-price-unit {
+  font-size: 13px;
+  color: var(--mc-muted);
+  font-weight: 500;
+}
+
+/* ---------- Subscribe / Cancel button ---------- */
+
+.subscribe-btn {
+  position: relative;
+  overflow: hidden;
+  border: none;
+  border-radius: 14px;
+  padding: 13px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--mc-white);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--mc-orange), var(--mc-orange-dark));
+  background-size: 200% auto;
+  box-shadow: 0 10px 24px rgba(232, 96, 10, 0.3);
+  transition:
+    background-position 0.5s ease,
+    transform 0.2s ease,
+    box-shadow 0.3s ease;
+}
+
+.subscribe-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+
+.subscribe-btn:hover:not(:disabled) {
+  background-position: 100% center;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(232, 96, 10, 0.4);
+}
+
+.subscribe-btn:hover:not(:disabled)::before {
+  left: 125%;
+}
+
+.subscribe-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.subscribe-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.subscribe-btn.is-subscribed {
+  background: linear-gradient(135deg, #ffffff, #fff5ef);
+  color: var(--mc-danger);
+  border: 1.5px solid rgba(225, 75, 75, 0.35);
+  box-shadow: none;
+}
+
+.subscribe-btn.is-subscribed:hover:not(:disabled) {
+  background: #fff0f0;
+  border-color: var(--mc-danger);
+  box-shadow: 0 10px 24px rgba(225, 75, 75, 0.22);
+  transform: translateY(-2px);
+}
+
+/* ---------- Empty state ---------- */
+
+.subs-empty {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: linear-gradient(180deg, #fffdfb 0%, #fff6ee 100%);
+}
+
+.subs-empty-box {
+  text-align: center;
+  max-width: 420px;
+  animation: mc-fade-drop 0.6s ease both;
+}
+
+.subs-empty-icon {
+  font-size: 54px;
+  color: var(--mc-orange);
+  margin-bottom: 18px;
+  animation: mc-icon-bounce 2.2s ease-in-out infinite;
+}
+
+@keyframes mc-icon-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.subs-empty-box h1 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--mc-ink);
+  margin: 0 0 10px;
+}
+
+.subs-empty-box p {
+  color: var(--mc-muted);
+  font-size: 15px;
+  margin: 0;
+}
+
+/* ---------- Skeleton loaders ---------- */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #f4e9df;
+  border-radius: 12px;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.75),
+    transparent
+  );
+  animation: mc-skeleton-shine 1.4s ease-in-out infinite;
+}
+
+@keyframes mc-skeleton-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-title {
+  width: 260px;
+  height: 34px;
+  margin-bottom: 12px;
+}
+
+.skeleton-subtitle {
+  width: 180px;
+  height: 18px;
+  margin-bottom: 36px;
+}
+
+.skeleton-card {
+  height: 320px;
+  border-radius: var(--mc-radius);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .subs-page::before,
+  .subs-page::after,
+  .subs-top h1,
+  .plan-card::after,
+  .subscribed-badge,
+  .plan-card:hover .plan-icon,
+  .subs-empty-icon,
+  .skeleton::after {
+    animation: none !important;
+  }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 640px) {
+  .subs-page {
+    padding: 32px 14px 60px;
+  }
+
+  .subs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-card {
+    padding: 20px;
+  }
+}
