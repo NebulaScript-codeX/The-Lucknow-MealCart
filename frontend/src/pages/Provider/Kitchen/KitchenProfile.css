@@ -1021,3 +1021,121 @@
     transition-duration: 0.01ms !important;
   }
 }
+/* =========================================================
+   KITCHEN SETUP / CREATE MODE
+   ========================================================= */
+
+.kitchen-setup-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 18px 21px;
+  border: 1px solid rgba(255, 107, 0, 0.15);
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 247, 240, 0.96),
+    rgba(255, 255, 255, 0.98)
+  );
+  box-shadow: 0 12px 35px rgba(255, 107, 0, 0.06);
+}
+
+.kitchen-setup-icon {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  color: #ff6b00;
+  background: rgba(255, 107, 0, 0.1);
+  font-size: 18px;
+}
+
+.kitchen-setup-banner strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #222;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.kitchen-setup-banner span {
+  display: block;
+  color: #999;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   CREATE MODE CARD IMPROVEMENTS
+   ========================================================= */
+
+.kitchen-profile-page form {
+  position: relative;
+  z-index: 2;
+}
+
+.kitchen-card input:focus,
+.kitchen-card textarea:focus {
+  outline: none;
+}
+
+/* Required field indicator */
+
+.kitchen-field label {
+  position: relative;
+}
+
+/* Better create button */
+
+.kitchen-primary-btn {
+  white-space: nowrap;
+}
+
+.kitchen-primary-btn svg {
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .kitchen-setup-banner {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .kitchen-setup-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .kitchen-setup-banner strong {
+    font-size: 12px;
+  }
+
+  .kitchen-setup-banner span {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .kitchen-setup-banner {
+    gap: 11px;
+  }
+
+  .kitchen-setup-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .kitchen-setup-banner span {
+    line-height: 1.5;
+  }
+}

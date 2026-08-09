@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+
 import {
   FiPlus,
   FiEdit3,
@@ -18,18 +19,30 @@ import {
   FiEye,
   FiEyeOff,
   FiUploadCloud,
+  FiShoppingBag,
 } from "react-icons/fi";
 
 import axiosInstance from "../../../utils/axiosInstance";
 import "./ProviderMeals.css";
+
+// =========================================================
+// INITIAL FORM
+// =========================================================
 
 const initialForm = {
   title: "",
   description: "",
   price: "",
   category: "",
+  mealType: "",
+  vegOrNonVeg: "",
+  quantityAvailable: "",
   isAvailable: true,
 };
+
+// =========================================================
+// CATEGORIES
+// =========================================================
 
 const categories = [
   "Breakfast",
@@ -43,6 +56,29 @@ const categories = [
   "Other",
 ];
 
+// =========================================================
+// MEAL TYPES
+// =========================================================
+
+const mealTypes = [
+  {
+    value: "breakfast",
+    label: "Breakfast",
+  },
+  {
+    value: "lunch",
+    label: "Lunch",
+  },
+  {
+    value: "dinner",
+    label: "Dinner",
+  },
+];
+
+// =========================================================
+// COMPONENT
+// =========================================================
+
 const ProviderMeal = () => {
   const [meals, setMeals] = useState([]);
 
@@ -53,6 +89,7 @@ const ProviderMeal = () => {
   const [editingMeal, setEditingMeal] = useState(null);
 
   const [formData, setFormData] = useState(initialForm);
+
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
@@ -80,7 +117,7 @@ const ProviderMeal = () => {
   };
 
   // =========================================================
-  // AVAILABILITY HELPER
+  // AVAILABILITY
   // =========================================================
 
   const getMealAvailability = (meal) => {
@@ -127,7 +164,7 @@ const ProviderMeal = () => {
   }, []);
 
   // =========================================================
-  // FORM HANDLERS
+  // FORM CHANGE
   // =========================================================
 
   const handleChange = (e) => {
@@ -139,6 +176,10 @@ const ProviderMeal = () => {
     }));
   };
 
+  // =========================================================
+  // RESET FORM
+  // =========================================================
+
   const resetForm = () => {
     setFormData(initialForm);
     setEditingMeal(null);
@@ -146,10 +187,18 @@ const ProviderMeal = () => {
     setImagePreview("");
   };
 
+  // =========================================================
+  // OPEN CREATE
+  // =========================================================
+
   const openCreateModal = () => {
     resetForm();
     setShowModal(true);
   };
+
+  // =========================================================
+  // OPEN EDIT
+  // =========================================================
 
   const openEditModal = (meal) => {
     if (!meal) return;
@@ -157,10 +206,13 @@ const ProviderMeal = () => {
     setEditingMeal(meal);
 
     setFormData({
-      title: meal.title || meal.name || "",
+      title: meal.title || "",
       description: meal.description || "",
       price: meal.price ?? "",
       category: meal.category || "",
+      mealType: meal.mealType || "",
+      vegOrNonVeg: meal.vegOrNonVeg || "",
+      quantityAvailable: meal.quantityAvailable ?? "",
       isAvailable: meal.isAvailable !== false,
     });
 
@@ -175,6 +227,10 @@ const ProviderMeal = () => {
     setShowModal(true);
   };
 
+  // =========================================================
+  // CLOSE MODAL
+  // =========================================================
+
   const closeModal = () => {
     if (submitting) return;
 
@@ -183,7 +239,7 @@ const ProviderMeal = () => {
   };
 
   // =========================================================
-  // IMAGE HANDLER
+  // IMAGE CHANGE
   // =========================================================
 
   const handleImageChange = (e) => {
@@ -212,16 +268,19 @@ const ProviderMeal = () => {
   // =========================================================
 
   const validateForm = () => {
+    // Title
     if (!formData.title.trim()) {
       toast.error("Please enter meal name.");
       return false;
     }
 
+    // Description
     if (!formData.description.trim()) {
       toast.error("Please enter meal description.");
       return false;
     }
 
+    // Price
     if (
       formData.price === "" ||
       Number.isNaN(Number(formData.price)) ||
@@ -231,8 +290,38 @@ const ProviderMeal = () => {
       return false;
     }
 
-    if (!formData.category.trim()) {
+    // Category
+    if (!formData.category) {
       toast.error("Please select a category.");
+      return false;
+    }
+
+    // Meal Type
+    if (!formData.mealType) {
+      toast.error("Please select meal type.");
+      return false;
+    }
+
+    // Veg / Non-Veg
+    if (!formData.vegOrNonVeg) {
+      toast.error("Please select veg or non-veg.");
+      return false;
+    }
+
+    // Quantity
+    if (
+      formData.quantityAvailable === "" ||
+      Number.isNaN(Number(formData.quantityAvailable)) ||
+      Number(formData.quantityAvailable) < 1
+    ) {
+      toast.error("Please enter available quantity.");
+      return false;
+    }
+
+    // Image is required only while creating.
+    // During edit, existing image can remain.
+    if (!editingMeal && !imageFile) {
+      toast.error("Please upload a meal image.");
       return false;
     }
 
@@ -240,7 +329,7 @@ const ProviderMeal = () => {
   };
 
   // =========================================================
-  // CREATE / UPDATE
+  // CREATE / UPDATE MEAL
   // =========================================================
 
   const handleSubmit = async (e) => {
@@ -253,37 +342,55 @@ const ProviderMeal = () => {
 
       const payload = new FormData();
 
+      // Required fields
       payload.append("title", formData.title.trim());
+
       payload.append(
         "description",
         formData.description.trim(),
       );
-      payload.append("price", Number(formData.price));
-      payload.append("category", formData.category);
 
-      // IMPORTANT:
-      // Always send actual boolean as string in FormData
+      payload.append(
+        "price",
+        Number(formData.price),
+      );
+
+      payload.append(
+        "category",
+        formData.category,
+      );
+
+      payload.append(
+        "mealType",
+        formData.mealType,
+      );
+
+      payload.append(
+        "vegOrNonVeg",
+        formData.vegOrNonVeg,
+      );
+
+      payload.append(
+        "quantityAvailable",
+        Number(formData.quantityAvailable),
+      );
+
+      // Availability
       payload.append(
         "isAvailable",
         formData.isAvailable ? "true" : "false",
       );
 
-      /*
-        Your backend model currently requires:
-        mealType
-        vegOrNonVeg
-        quantityAvailable
-
-        If these are required in your Meal model,
-        backend will reject the request unless those
-        fields are handled there/defaulted.
-      */
-
+      // Image
       if (imageFile) {
         payload.append("image", imageFile);
       }
 
       let res;
+
+      // =====================================================
+      // UPDATE
+      // =====================================================
 
       if (editingMeal) {
         res = await axiosInstance.put(
@@ -298,12 +405,19 @@ const ProviderMeal = () => {
 
         if (!res.data?.success) {
           throw new Error(
-            res.data?.message || "Unable to update meal.",
+            res.data?.message ||
+              "Unable to update meal.",
           );
         }
 
         toast.success("Meal updated successfully.");
-      } else {
+      }
+
+      // =====================================================
+      // CREATE
+      // =====================================================
+
+      else {
         res = await axiosInstance.post(
           "/meal/add-meal",
           payload,
@@ -316,22 +430,33 @@ const ProviderMeal = () => {
 
         if (!res.data?.success) {
           throw new Error(
-            res.data?.message || "Unable to create meal.",
+            res.data?.message ||
+              "Unable to create meal.",
           );
         }
 
         toast.success("Meal added successfully.");
       }
 
+      // Close modal
       setShowModal(false);
+
+      // Reset form
       resetForm();
 
+      // Refresh meals
       await fetchMeals();
     } catch (error) {
       console.error("Meal save error:", error);
 
+      console.error(
+        "Backend response:",
+        error.response?.data,
+      );
+
       toast.error(
         error.response?.data?.message ||
+          error.response?.data?.error ||
           error.message ||
           "Something went wrong while saving the meal.",
       );
@@ -360,14 +485,17 @@ const ProviderMeal = () => {
 
       if (!res.data?.success) {
         throw new Error(
-          res.data?.message || "Unable to delete meal.",
+          res.data?.message ||
+            "Unable to delete meal.",
         );
       }
 
       toast.success("Meal deleted successfully.");
 
       setMeals((prev) =>
-        prev.filter((meal) => meal?._id !== mealId),
+        prev.filter(
+          (meal) => meal?._id !== mealId,
+        ),
       );
     } catch (error) {
       console.error("Delete meal error:", error);
@@ -388,11 +516,13 @@ const ProviderMeal = () => {
     return meals.filter((meal) => {
       if (!meal) return false;
 
-      const title = meal.title || meal.name || "";
+      const title = meal.title || "";
       const description = meal.description || "";
       const category = meal.category || "";
 
-      const search = searchTerm.toLowerCase().trim();
+      const search = searchTerm
+        .toLowerCase()
+        .trim();
 
       const matchesSearch =
         title.toLowerCase().includes(search) ||
@@ -403,12 +533,15 @@ const ProviderMeal = () => {
         category.toLowerCase() ===
           categoryFilter.toLowerCase();
 
-      const isAvailable = getMealAvailability(meal);
+      const isAvailable =
+        getMealAvailability(meal);
 
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "active" && isAvailable) ||
-        (statusFilter === "inactive" && !isAvailable);
+        (statusFilter === "active" &&
+          isAvailable) ||
+        (statusFilter === "inactive" &&
+          !isAvailable);
 
       return (
         matchesSearch &&
@@ -432,7 +565,8 @@ const ProviderMeal = () => {
   ).length;
 
   const inactiveMeals = meals.filter(
-    (meal) => meal && !getMealAvailability(meal),
+    (meal) =>
+      meal && !getMealAvailability(meal),
   ).length;
 
   const totalValue = meals.reduce(
@@ -442,15 +576,17 @@ const ProviderMeal = () => {
   );
 
   // =========================================================
-  // LOADING
+  // LOADING SCREEN
   // =========================================================
 
   if (loading) {
     return (
       <div className="provider-meals-page">
         <div className="provider-meals-container">
+
           <div className="meal-loading-header">
             <div className="meal-shimmer meal-shimmer-title" />
+
             <div className="meal-shimmer meal-shimmer-description" />
           </div>
 
@@ -464,6 +600,7 @@ const ProviderMeal = () => {
 
                 <div>
                   <div className="meal-shimmer meal-shimmer-small" />
+
                   <div className="meal-shimmer meal-shimmer-number" />
                 </div>
               </div>
@@ -471,20 +608,24 @@ const ProviderMeal = () => {
           </div>
 
           <div className="meal-loading-grid">
-            {[1, 2, 3, 4, 5, 6].map((item) => (
-              <div
-                className="meal-card-skeleton"
-                key={item}
-              >
-                <div className="meal-shimmer meal-shimmer-image" />
+            {[1, 2, 3, 4, 5, 6].map(
+              (item) => (
+                <div
+                  className="meal-card-skeleton"
+                  key={item}
+                >
+                  <div className="meal-shimmer meal-shimmer-image" />
 
-                <div className="meal-skeleton-content">
-                  <div className="meal-shimmer meal-shimmer-line" />
-                  <div className="meal-shimmer meal-shimmer-line short" />
-                  <div className="meal-shimmer meal-shimmer-line shorter" />
+                  <div className="meal-skeleton-content">
+                    <div className="meal-shimmer meal-shimmer-line" />
+
+                    <div className="meal-shimmer meal-shimmer-line short" />
+
+                    <div className="meal-shimmer meal-shimmer-line shorter" />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -492,7 +633,7 @@ const ProviderMeal = () => {
   }
 
   // =========================================================
-  // UI
+  // MAIN UI
   // =========================================================
 
   return (
@@ -518,6 +659,7 @@ const ProviderMeal = () => {
           }}
         >
           <div className="provider-meals-heading">
+
             <div className="meals-eyebrow">
               <FiLayers />
               <span>PROVIDER WORKSPACE</span>
@@ -528,8 +670,8 @@ const ProviderMeal = () => {
             </h1>
 
             <p>
-              Create, update and manage the meals available
-              from your kitchen.
+              Create, update and manage the meals
+              available from your kitchen.
             </p>
           </div>
 
@@ -567,6 +709,9 @@ const ProviderMeal = () => {
             },
           }}
         >
+
+          {/* TOTAL */}
+
           <motion.div
             className="meal-stat-card"
             variants={{
@@ -587,9 +732,14 @@ const ProviderMeal = () => {
 
             <div>
               <span>Total Meals</span>
-              <strong>{meals.length}</strong>
+
+              <strong>
+                {meals.length}
+              </strong>
             </div>
           </motion.div>
+
+          {/* AVAILABLE */}
 
           <motion.div
             className="meal-stat-card"
@@ -611,9 +761,14 @@ const ProviderMeal = () => {
 
             <div>
               <span>Available</span>
-              <strong>{activeMeals}</strong>
+
+              <strong>
+                {activeMeals}
+              </strong>
             </div>
           </motion.div>
+
+          {/* UNAVAILABLE */}
 
           <motion.div
             className="meal-stat-card"
@@ -635,9 +790,14 @@ const ProviderMeal = () => {
 
             <div>
               <span>Unavailable</span>
-              <strong>{inactiveMeals}</strong>
+
+              <strong>
+                {inactiveMeals}
+              </strong>
             </div>
           </motion.div>
+
+          {/* VALUE */}
 
           <motion.div
             className="meal-stat-card"
@@ -659,8 +819,12 @@ const ProviderMeal = () => {
 
             <div>
               <span>Menu Value</span>
+
               <strong>
-                ₹{totalValue.toLocaleString("en-IN")}
+                ₹
+                {totalValue.toLocaleString(
+                  "en-IN",
+                )}
               </strong>
             </div>
           </motion.div>
@@ -700,7 +864,9 @@ const ProviderMeal = () => {
               <button
                 type="button"
                 className="clear-search-btn"
-                onClick={() => setSearchTerm("")}
+                onClick={() =>
+                  setSearchTerm("")
+                }
               >
                 <FiX />
               </button>
@@ -708,32 +874,42 @@ const ProviderMeal = () => {
           </div>
 
           <div className="meal-filter-group">
+
+            {/* CATEGORY */}
+
             <div className="meal-filter">
               <FiFilter />
 
               <select
                 value={categoryFilter}
                 onChange={(e) =>
-                  setCategoryFilter(e.target.value)
+                  setCategoryFilter(
+                    e.target.value,
+                  )
                 }
               >
                 <option value="all">
                   All Categories
                 </option>
 
-                {categories.map((category) => (
-                  <option
-                    value={category}
-                    key={category}
-                  >
-                    {category}
-                  </option>
-                ))}
+                {categories.map(
+                  (category) => (
+                    <option
+                      value={category}
+                      key={category}
+                    >
+                      {category}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
 
+            {/* STATUS */}
+
             <div className="meal-filter">
-              {statusFilter === "inactive" ? (
+              {statusFilter ===
+              "inactive" ? (
                 <FiEyeOff />
               ) : (
                 <FiEye />
@@ -742,7 +918,9 @@ const ProviderMeal = () => {
               <select
                 value={statusFilter}
                 onChange={(e) =>
-                  setStatusFilter(e.target.value)
+                  setStatusFilter(
+                    e.target.value,
+                  )
                 }
               >
                 <option value="all">
@@ -758,6 +936,8 @@ const ProviderMeal = () => {
                 </option>
               </select>
             </div>
+
+            {/* REFRESH */}
 
             <motion.button
               type="button"
@@ -792,7 +972,9 @@ const ProviderMeal = () => {
                 {filteredMeals.length}
               </strong>{" "}
               of{" "}
-              <strong>{meals.length}</strong>{" "}
+              <strong>
+                {meals.length}
+              </strong>{" "}
               meals
             </p>
           </div>
@@ -859,6 +1041,7 @@ const ProviderMeal = () => {
             )}
           </motion.div>
         ) : (
+
           /* =====================================================
              MEAL GRID
           ====================================================== */
@@ -881,7 +1064,6 @@ const ProviderMeal = () => {
 
               const mealTitle =
                 meal.title ||
-                meal.name ||
                 "Untitled Meal";
 
               const mealImage = meal.image
@@ -916,9 +1098,11 @@ const ProviderMeal = () => {
                     },
                   }}
                 >
+
                   {/* IMAGE */}
 
                   <div className="provider-meal-image">
+
                     {mealImage ? (
                       <img
                         src={mealImage}
@@ -927,14 +1111,18 @@ const ProviderMeal = () => {
                     ) : (
                       <div className="meal-no-image">
                         <FiImage />
-                        <span>No Image</span>
+
+                        <span>
+                          No Image
+                        </span>
                       </div>
                     )}
 
                     <div className="meal-image-overlay" />
 
                     <span className="meal-category-badge">
-                      {meal.category || "Meal"}
+                      {meal.category ||
+                        "Meal"}
                     </span>
 
                     <span
@@ -959,14 +1147,20 @@ const ProviderMeal = () => {
                   {/* CONTENT */}
 
                   <div className="provider-meal-content">
+
                     <div className="provider-meal-title-row">
-                      <h3>{mealTitle}</h3>
+
+                      <h3>
+                        {mealTitle}
+                      </h3>
 
                       <div className="meal-price">
                         ₹
                         {Number(
                           meal.price || 0,
-                        ).toLocaleString("en-IN")}
+                        ).toLocaleString(
+                          "en-IN",
+                        )}
                       </div>
                     </div>
 
@@ -975,10 +1169,52 @@ const ProviderMeal = () => {
                         "No description added for this meal."}
                     </p>
 
+                    {/* META */}
+
                     <div className="meal-card-meta">
+
                       <span>
                         <FiClock />
-                        Freshly prepared
+
+                        {meal.mealType
+                          ? meal.mealType
+                              .charAt(0)
+                              .toUpperCase() +
+                            meal.mealType.slice(
+                              1,
+                            )
+                          : "Meal"}
+                      </span>
+
+                      <span>
+                        {meal.vegOrNonVeg ===
+                        "veg" ? (
+                          <>
+                            <FiCheckCircle />
+                            Veg
+                          </>
+                        ) : (
+                          <>
+                            <FiShoppingBag />
+                            Non-Veg
+                          </>
+                        )}
+                      </span>
+
+                    </div>
+
+                    {/* QUANTITY */}
+
+                    <div className="meal-card-meta">
+
+                      <span>
+                        <FiPackage />
+
+                        {Number(
+                          meal.quantityAvailable ||
+                            0,
+                        )}{" "}
+                        available
                       </span>
 
                       <span>
@@ -992,11 +1228,15 @@ const ProviderMeal = () => {
                           ? "Orderable"
                           : "Hidden"}
                       </span>
+
                     </div>
 
                     <div className="meal-card-divider" />
 
+                    {/* ACTIONS */}
+
                     <div className="provider-meal-actions">
+
                       <button
                         type="button"
                         className="meal-edit-btn"
@@ -1012,12 +1252,15 @@ const ProviderMeal = () => {
                         type="button"
                         className="meal-delete-btn"
                         onClick={() =>
-                          handleDelete(meal._id)
+                          handleDelete(
+                            meal._id,
+                          )
                         }
                         title="Delete meal"
                       >
                         <FiTrash2 />
                       </button>
+
                     </div>
                   </div>
                 </motion.article>
@@ -1034,11 +1277,20 @@ const ProviderMeal = () => {
           {showModal && (
             <motion.div
               className="meal-modal-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
               onMouseDown={(e) => {
-                if (e.target === e.currentTarget) {
+                if (
+                  e.target ===
+                  e.currentTarget
+                ) {
                   closeModal();
                 }
               }}
@@ -1064,9 +1316,13 @@ const ProviderMeal = () => {
                   duration: 0.25,
                 }}
               >
-                {/* MODAL HEADER */}
+
+                {/* =================================================
+                    MODAL HEADER
+                ================================================== */}
 
                 <div className="meal-modal-header">
+
                   <div>
                     <span>
                       {editingMeal
@@ -1091,16 +1347,23 @@ const ProviderMeal = () => {
                   </button>
                 </div>
 
-                {/* FORM */}
+                {/* =================================================
+                    FORM
+                ================================================== */}
 
                 <form
                   className="meal-form"
                   onSubmit={handleSubmit}
                 >
-                  {/* IMAGE */}
+
+                  {/* =================================================
+                      IMAGE
+                  ================================================== */}
 
                   <div className="meal-image-upload">
+
                     <div className="upload-preview">
+
                       {imagePreview ? (
                         <img
                           src={imagePreview}
@@ -1109,11 +1372,13 @@ const ProviderMeal = () => {
                       ) : (
                         <div>
                           <FiUploadCloud />
+
                           <span>
                             Upload meal image
                           </span>
                         </div>
                       )}
+
                     </div>
 
                     <label className="upload-btn">
@@ -1126,19 +1391,26 @@ const ProviderMeal = () => {
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={handleImageChange}
+                        onChange={
+                          handleImageChange
+                        }
                       />
                     </label>
 
                     <small>
                       JPG, PNG or WEBP • Maximum
                       5MB
+                      {!editingMeal &&
+                        " • Required"}
                     </small>
                   </div>
 
-                  {/* TITLE */}
+                  {/* =================================================
+                      TITLE
+                  ================================================== */}
 
                   <div className="form-group">
+
                     <label>
                       Meal Name{" "}
                       <span>*</span>
@@ -1147,17 +1419,24 @@ const ProviderMeal = () => {
                     <input
                       type="text"
                       name="title"
-                      value={formData.title}
-                      onChange={handleChange}
+                      value={
+                        formData.title
+                      }
+                      onChange={
+                        handleChange
+                      }
                       placeholder="e.g. Paneer Butter Masala"
                       maxLength={100}
                       required
                     />
                   </div>
 
-                  {/* DESCRIPTION */}
+                  {/* =================================================
+                      DESCRIPTION
+                  ================================================== */}
 
                   <div className="form-group">
+
                     <label>
                       Description{" "}
                       <span>*</span>
@@ -1165,8 +1444,12 @@ const ProviderMeal = () => {
 
                     <textarea
                       name="description"
-                      value={formData.description}
-                      onChange={handleChange}
+                      value={
+                        formData.description
+                      }
+                      onChange={
+                        handleChange
+                      }
                       placeholder="Describe ingredients, taste and what customers will receive..."
                       rows="4"
                       maxLength={500}
@@ -1174,10 +1457,16 @@ const ProviderMeal = () => {
                     />
                   </div>
 
-                  {/* PRICE + CATEGORY */}
+                  {/* =================================================
+                      PRICE + CATEGORY
+                  ================================================== */}
 
                   <div className="form-row">
+
+                    {/* PRICE */}
+
                     <div className="form-group">
+
                       <label>
                         Price{" "}
                         <span>*</span>
@@ -1189,8 +1478,12 @@ const ProviderMeal = () => {
                         <input
                           type="number"
                           name="price"
-                          value={formData.price}
-                          onChange={handleChange}
+                          value={
+                            formData.price
+                          }
+                          onChange={
+                            handleChange
+                          }
                           placeholder="199"
                           min="1"
                           step="1"
@@ -1199,7 +1492,10 @@ const ProviderMeal = () => {
                       </div>
                     </div>
 
+                    {/* CATEGORY */}
+
                     <div className="form-group">
+
                       <label>
                         Category{" "}
                         <span>*</span>
@@ -1207,8 +1503,12 @@ const ProviderMeal = () => {
 
                       <select
                         name="category"
-                        value={formData.category}
-                        onChange={handleChange}
+                        value={
+                          formData.category
+                        }
+                        onChange={
+                          handleChange
+                        }
                         required
                       >
                         <option value="">
@@ -1229,9 +1529,130 @@ const ProviderMeal = () => {
                     </div>
                   </div>
 
-                  {/* AVAILABILITY */}
+                  {/* =================================================
+                      MEAL TYPE + FOOD TYPE
+                  ================================================== */}
+
+                  <div className="form-row">
+
+                    {/* MEAL TYPE */}
+
+                    <div className="form-group">
+
+                      <label>
+                        Meal Type{" "}
+                        <span>*</span>
+                      </label>
+
+                      <select
+                        name="mealType"
+                        value={
+                          formData.mealType
+                        }
+                        onChange={
+                          handleChange
+                        }
+                        required
+                      >
+                        <option value="">
+                          Select meal type
+                        </option>
+
+                        {mealTypes.map(
+                          (type) => (
+                            <option
+                              value={
+                                type.value
+                              }
+                              key={
+                                type.value
+                              }
+                            >
+                              {type.label}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+
+                    {/* VEG / NON VEG */}
+
+                    <div className="form-group">
+
+                      <label>
+                        Food Type{" "}
+                        <span>*</span>
+                      </label>
+
+                      <select
+                        name="vegOrNonVeg"
+                        value={
+                          formData.vegOrNonVeg
+                        }
+                        onChange={
+                          handleChange
+                        }
+                        required
+                      >
+                        <option value="">
+                          Select food type
+                        </option>
+
+                        <option value="veg">
+                          Veg
+                        </option>
+
+                        <option value="non-veg">
+                          Non-Veg
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* =================================================
+                      QUANTITY
+                  ================================================== */}
+
+                  <div className="form-group">
+
+                    <label>
+                      Available Quantity{" "}
+                      <span>*</span>
+                    </label>
+
+                    <div className="input-prefix">
+                      <span>
+                        <FiPackage />
+                      </span>
+
+                      <input
+                        type="number"
+                        name="quantityAvailable"
+                        value={
+                          formData.quantityAvailable
+                        }
+                        onChange={
+                          handleChange
+                        }
+                        placeholder="e.g. 20"
+                        min="1"
+                        step="1"
+                        required
+                      />
+                    </div>
+
+                    <small>
+                      Number of portions/items
+                      currently available.
+                    </small>
+                  </div>
+
+                  {/* =================================================
+                      AVAILABILITY
+                  ================================================== */}
 
                   <label className="meal-availability-toggle">
+
                     <div>
                       <strong>
                         Meal availability
@@ -1248,22 +1669,32 @@ const ProviderMeal = () => {
                       type="checkbox"
                       name="isAvailable"
                       checked={
-                        formData.isAvailable === true
+                        formData.isAvailable ===
+                        true
                       }
-                      onChange={handleChange}
+                      onChange={
+                        handleChange
+                      }
                     />
 
                     <span className="custom-toggle" />
                   </label>
 
-                  {/* ACTIONS */}
+                  {/* =================================================
+                      ACTIONS
+                  ================================================== */}
 
                   <div className="meal-form-actions">
+
                     <button
                       type="button"
                       className="cancel-meal-btn"
-                      onClick={closeModal}
-                      disabled={submitting}
+                      onClick={
+                        closeModal
+                      }
+                      disabled={
+                        submitting
+                      }
                     >
                       Cancel
                     </button>
@@ -1271,11 +1702,14 @@ const ProviderMeal = () => {
                     <button
                       type="submit"
                       className="submit-meal-btn"
-                      disabled={submitting}
+                      disabled={
+                        submitting
+                      }
                     >
                       {submitting ? (
                         <>
                           <span className="meal-button-spinner" />
+
                           Saving...
                         </>
                       ) : (
@@ -1304,4 +1738,3 @@ const ProviderMeal = () => {
 };
 
 export default ProviderMeal;
-

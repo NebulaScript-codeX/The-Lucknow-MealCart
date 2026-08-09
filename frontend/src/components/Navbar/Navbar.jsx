@@ -94,12 +94,12 @@ export default function Navbar() {
     });
   };
   useEffect(() => {
-  fetchFavoriteCount();
-}, [user]);
+    fetchFavoriteCount();
+  }, [user]);
 
-useEffect(() => {
-  fetchNotificationCount();
-}, [user]);
+  useEffect(() => {
+    fetchNotificationCount();
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -587,6 +587,16 @@ useEffect(() => {
 
                 {user.role === "provider" && (
                   <>
+                    <div
+                      className="profile-item"
+                      onClick={() => {
+                        navigate("/provider/kitchen");
+                        setProfileOpen(false);
+                      }}
+                    >
+                      <FiUser />
+                      <span>Manage Kitchen</span>
+                    </div>
                     <div
                       className="profile-item"
                       onClick={() => {

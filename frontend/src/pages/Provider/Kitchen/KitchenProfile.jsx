@@ -22,6 +22,7 @@ import {
   FaUser,
   FaEnvelope,
   FaShieldAlt,
+  FaCheckCircle,
 } from "react-icons/fa";
 
 import Navbar from "../../../components/Navbar/Navbar";
@@ -29,6 +30,17 @@ import Footer from "../../../components/Footer/Footer";
 import axiosInstance from "../../../utils/axiosInstance";
 
 import "./KitchenProfile.css";
+
+const emptyForm = {
+  kitchenName: "",
+  description: "",
+  timings: "",
+  deliveryAreas: [""],
+  minimumOrderAmount: "",
+  estimatedDeliveryTime: "",
+  gallery: [""],
+  openStatus: true,
+};
 
 const KitchenProfile = () => {
   const navigate = useNavigate();
@@ -38,16 +50,13 @@ const KitchenProfile = () => {
 
   const [kitchen, setKitchen] = useState(null);
 
-  const [formData, setFormData] = useState({
-    kitchenName: "",
-    description: "",
-    timings: "",
-    deliveryAreas: [""],
-    minimumOrderAmount: "",
-    estimatedDeliveryTime: "",
-    gallery: [""],
-    openStatus: true,
-  });
+  const [formData, setFormData] = useState(emptyForm);
+
+  /*
+   * ---------------------------------------------------------
+   * FETCH KITCHEN
+   * ---------------------------------------------------------
+   */
 
   useEffect(() => {
     fetchKitchen();
@@ -62,44 +71,48 @@ const KitchenProfile = () => {
       if (response.data?.success) {
         const kitchenData = response.data.data;
 
+        /*
+         * No kitchen found
+         * Show create-kitchen form instead of dashboard.
+         */
         if (!kitchenData) {
           setKitchen(null);
-
-          setFormData({
-            kitchenName: "",
-            description: "",
-            timings: "",
-            deliveryAreas: [""],
-            minimumOrderAmount: "",
-            estimatedDeliveryTime: "",
-            gallery: [""],
-            openStatus: true,
-          });
-
+          setFormData(emptyForm);
           return;
         }
 
+        /*
+         * Kitchen exists.
+         * This page becomes Kitchen Settings/Profile.
+         */
         setKitchen(kitchenData);
 
         setFormData({
           kitchenName: kitchenData.kitchenName || "",
           description: kitchenData.description || "",
           timings: kitchenData.timings || "",
+
           deliveryAreas:
             Array.isArray(kitchenData.deliveryAreas) &&
             kitchenData.deliveryAreas.length
               ? kitchenData.deliveryAreas
               : [""],
+
           minimumOrderAmount:
             kitchenData.minimumOrderAmount !== undefined &&
             kitchenData.minimumOrderAmount !== null
               ? String(kitchenData.minimumOrderAmount)
               : "",
-          estimatedDeliveryTime: kitchenData.estimatedDeliveryTime || "",
+
+          estimatedDeliveryTime:
+            kitchenData.estimatedDeliveryTime || "",
+
           gallery:
-            Array.isArray(kitchenData.gallery) && kitchenData.gallery.length
+            Array.isArray(kitchenData.gallery) &&
+            kitchenData.gallery.length
               ? kitchenData.gallery
               : [""],
+
           openStatus:
             typeof kitchenData.openStatus === "boolean"
               ? kitchenData.openStatus
@@ -107,7 +120,7 @@ const KitchenProfile = () => {
         });
       } else {
         toast.error(
-          response.data?.message || "Unable to load your kitchen.",
+          response.data?.message || "Unable to load kitchen."
         );
       }
     } catch (error) {
@@ -115,12 +128,18 @@ const KitchenProfile = () => {
 
       toast.error(
         error?.response?.data?.message ||
-          "Unable to load your kitchen profile.",
+          "Unable to load your kitchen profile."
       );
     } finally {
       setLoading(false);
     }
   };
+
+  /*
+   * ---------------------------------------------------------
+   * FORM HANDLERS
+   * ---------------------------------------------------------
+   */
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -153,7 +172,7 @@ const KitchenProfile = () => {
   const removeDeliveryArea = (index) => {
     setFormData((prev) => {
       const updated = prev.deliveryAreas.filter(
-        (_, areaIndex) => areaIndex !== index,
+        (_, areaIndex) => areaIndex !== index
       );
 
       return {
@@ -185,7 +204,7 @@ const KitchenProfile = () => {
   const removeGalleryImage = (index) => {
     setFormData((prev) => {
       const updated = prev.gallery.filter(
-        (_, imageIndex) => imageIndex !== index,
+        (_, imageIndex) => imageIndex !== index
       );
 
       return {
@@ -202,27 +221,31 @@ const KitchenProfile = () => {
     }));
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  /*
+   * ---------------------------------------------------------
+   * VALIDATION
+   * ---------------------------------------------------------
+   */
 
+  const validateKitchen = () => {
     if (!formData.kitchenName.trim()) {
       toast.error("Please enter your kitchen name.");
-      return;
+      return false;
     }
 
     if (!formData.description.trim()) {
       toast.error("Please enter your kitchen description.");
-      return;
+      return false;
     }
 
     if (!formData.timings.trim()) {
-      toast.error("Please enter your kitchen timings.");
-      return;
+      toast.error("Please enter your operating hours.");
+      return false;
     }
 
     if (!formData.estimatedDeliveryTime.trim()) {
       toast.error("Please enter estimated delivery time.");
-      return;
+      return false;
     }
 
     if (
@@ -230,86 +253,163 @@ const KitchenProfile = () => {
       Number(formData.minimumOrderAmount) < 0
     ) {
       toast.error("Please enter a valid minimum order amount.");
-      return;
+      return false;
     }
+
+    const areas = formData.deliveryAreas
+      .map((area) => area.trim())
+      .filter(Boolean);
+
+    if (!areas.length) {
+      toast.error("Please add at least one delivery area.");
+      return false;
+    }
+
+    return true;
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * CREATE / UPDATE KITCHEN
+   * ---------------------------------------------------------
+   */
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+
+    if (!validateKitchen()) return;
 
     const cleanedDeliveryAreas = formData.deliveryAreas
       .map((area) => area.trim())
       .filter(Boolean);
 
-    if (!cleanedDeliveryAreas.length) {
-      toast.error("Please add at least one delivery area.");
-      return;
-    }
-
     const cleanedGallery = formData.gallery
       .map((image) => image.trim())
       .filter(Boolean);
 
+    const payload = {
+      kitchenName: formData.kitchenName.trim(),
+      description: formData.description.trim(),
+      timings: formData.timings.trim(),
+      deliveryAreas: cleanedDeliveryAreas,
+      minimumOrderAmount: Number(formData.minimumOrderAmount),
+      estimatedDeliveryTime:
+        formData.estimatedDeliveryTime.trim(),
+      gallery: cleanedGallery,
+      openStatus: formData.openStatus,
+    };
+
     try {
       setSaving(true);
 
-      const response = await axiosInstance.put("/kitchen/update", {
-        kitchenName: formData.kitchenName.trim(),
-        description: formData.description.trim(),
-        timings: formData.timings.trim(),
-        deliveryAreas: cleanedDeliveryAreas,
-        minimumOrderAmount: Number(formData.minimumOrderAmount),
-        estimatedDeliveryTime: formData.estimatedDeliveryTime.trim(),
-        gallery: cleanedGallery,
-        openStatus: formData.openStatus,
-      });
+      let response;
+
+      /*
+       * NO KITCHEN
+       * Create new kitchen
+       */
+      if (!kitchen) {
+        response = await axiosInstance.post(
+          "/kitchen/create",
+          payload
+        );
+      }
+
+      /*
+       * KITCHEN EXISTS
+       * Update kitchen
+       */
+      else {
+        response = await axiosInstance.put(
+          "/kitchen/update",
+          payload
+        );
+      }
 
       if (response.data?.success) {
-        const updatedKitchen = response.data.data;
+        const savedKitchen = response.data.data;
 
-        setKitchen(updatedKitchen);
-
-        setFormData({
-          kitchenName: updatedKitchen?.kitchenName || "",
-          description: updatedKitchen?.description || "",
-          timings: updatedKitchen?.timings || "",
-          deliveryAreas:
-            Array.isArray(updatedKitchen?.deliveryAreas) &&
-            updatedKitchen.deliveryAreas.length
-              ? updatedKitchen.deliveryAreas
-              : [""],
-          minimumOrderAmount:
-            updatedKitchen?.minimumOrderAmount !== undefined
-              ? String(updatedKitchen.minimumOrderAmount)
-              : "",
-          estimatedDeliveryTime:
-            updatedKitchen?.estimatedDeliveryTime || "",
-          gallery:
-            Array.isArray(updatedKitchen?.gallery) &&
-            updatedKitchen.gallery.length
-              ? updatedKitchen.gallery
-              : [""],
-          openStatus:
-            typeof updatedKitchen?.openStatus === "boolean"
-              ? updatedKitchen.openStatus
-              : true,
-        });
+        setKitchen(savedKitchen);
 
         toast.success(
-          response.data.message || "Kitchen updated successfully.",
+          response.data.message ||
+            (kitchen
+              ? "Kitchen updated successfully."
+              : "Kitchen created successfully!")
         );
+
+        /*
+         * After first kitchen creation,
+         * directly open provider dashboard.
+         */
+        if (!kitchen) {
+          setTimeout(() => {
+            navigate("/provider/dashboard", {
+              replace: true,
+            });
+          }, 700);
+
+          return;
+        }
+
+        /*
+         * Existing kitchen
+         */
+        setFormData({
+          kitchenName: savedKitchen?.kitchenName || "",
+          description: savedKitchen?.description || "",
+          timings: savedKitchen?.timings || "",
+
+          deliveryAreas:
+            Array.isArray(savedKitchen?.deliveryAreas) &&
+            savedKitchen.deliveryAreas.length
+              ? savedKitchen.deliveryAreas
+              : [""],
+
+          minimumOrderAmount:
+            savedKitchen?.minimumOrderAmount !== undefined
+              ? String(savedKitchen.minimumOrderAmount)
+              : "",
+
+          estimatedDeliveryTime:
+            savedKitchen?.estimatedDeliveryTime || "",
+
+          gallery:
+            Array.isArray(savedKitchen?.gallery) &&
+            savedKitchen.gallery.length
+              ? savedKitchen.gallery
+              : [""],
+
+          openStatus:
+            typeof savedKitchen?.openStatus === "boolean"
+              ? savedKitchen.openStatus
+              : true,
+        });
       } else {
         toast.error(
-          response.data?.message || "Unable to update kitchen.",
+          response.data?.message ||
+            "Unable to save kitchen."
         );
       }
     } catch (error) {
-      console.error("Kitchen Update Error:", error);
+      console.error("Kitchen Save Error:", error);
 
       toast.error(
         error?.response?.data?.message ||
-          "Unable to update kitchen profile.",
+          (kitchen
+            ? "Unable to update kitchen."
+            : "Unable to create kitchen.")
       );
     } finally {
       setSaving(false);
     }
   };
+
+  /*
+   * ---------------------------------------------------------
+   * LOADING
+   * ---------------------------------------------------------
+   */
 
   if (loading) {
     return (
@@ -322,10 +422,11 @@ const KitchenProfile = () => {
               <FaStore />
             </div>
 
-            <h3>Loading your kitchen...</h3>
+            <h3>Checking your kitchen...</h3>
 
             <p>
-              Fetching your kitchen information from the database.
+              We are checking whether your provider account
+              has a kitchen.
             </p>
           </div>
         </main>
@@ -335,43 +436,13 @@ const KitchenProfile = () => {
     );
   }
 
-  if (!kitchen) {
-    return (
-      <>
-        <Navbar />
+  /*
+   * ---------------------------------------------------------
+   * MAIN PAGE
+   * ---------------------------------------------------------
+   */
 
-        <main className="kitchen-profile-page">
-          <div className="kitchen-empty-state">
-            <div className="kitchen-empty-icon">
-              <FaStore />
-            </div>
-
-            <span className="kitchen-empty-eyebrow">
-              PROVIDER KITCHEN
-            </span>
-
-            <h1>Create Your Kitchen</h1>
-
-            <p>
-              You don't have a kitchen profile yet. Create one to start
-              managing your meals and customers.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => navigate("/provider/kitchen/create")}
-              className="kitchen-primary-btn"
-            >
-              <FaPlus />
-              Create Kitchen
-            </button>
-          </div>
-        </main>
-
-        <Footer />
-      </>
-    );
-  }
+  const isCreateMode = !kitchen;
 
   return (
     <>
@@ -382,11 +453,13 @@ const KitchenProfile = () => {
         <div className="kitchen-profile-orb kitchen-profile-orb-two" />
 
         <div className="kitchen-profile-container">
+
+          {/* HEADER */}
+
           <motion.div
             className="kitchen-profile-header"
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
           >
             <button
               type="button"
@@ -402,215 +475,264 @@ const KitchenProfile = () => {
             </span>
 
             <h1>
-              Your <span>Kitchen</span>
+              {isCreateMode ? (
+                <>
+                  Create Your <span>Kitchen</span>
+                </>
+              ) : (
+                <>
+                  Your <span>Kitchen</span>
+                </>
+              )}
             </h1>
 
             <p>
-              Manage your kitchen profile, delivery areas, timings and
-              business information.
+              {isCreateMode
+                ? "Set up your kitchen profile to start adding meals, managing orders and serving customers."
+                : "Manage your kitchen profile, delivery areas, timings and business information."}
             </p>
           </motion.div>
 
-          <motion.section
-            className="kitchen-hero-card"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="kitchen-hero-icon">
-              <FaUtensils />
-            </div>
+          {/* CREATE MODE INFO */}
 
-            <div className="kitchen-hero-info">
-              <div className="kitchen-title-row">
-                <h2>{kitchen.kitchenName}</h2>
-
-                <span className="kitchen-provider-badge">
-                  PROVIDER
-                </span>
+          {isCreateMode && (
+            <motion.div
+              className="kitchen-setup-banner"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="kitchen-setup-icon">
+                <FaCheckCircle />
               </div>
 
-              <p className="kitchen-owner">
-                <FaUser />
-
-                {kitchen.ownerId?.name || "Kitchen Provider"}
-
-                {kitchen.ownerId?.email && (
-                  <>
-                    <span className="kitchen-meta-divider">•</span>
-                    <FaEnvelope />
-                    {kitchen.ownerId.email}
-                  </>
-                )}
-              </p>
-
-              <div className="kitchen-hero-meta">
-                <span>
-                  <FaMapMarkerAlt />
-
-                  {kitchen.deliveryAreas?.length
-                    ? `${kitchen.deliveryAreas.length} delivery area${
-                        kitchen.deliveryAreas.length > 1 ? "s" : ""
-                      }`
-                    : "No delivery areas"}
-                </span>
+              <div>
+                <strong>
+                  Complete your kitchen setup
+                </strong>
 
                 <span>
-                  <FaClock />
-
-                  {kitchen.timings || "Timings not added"}
+                  Add the required details below. Once your
+                  kitchen is created, your provider dashboard
+                  will be activated.
                 </span>
               </div>
-            </div>
+            </motion.div>
+          )}
 
-            <div className="kitchen-status-wrapper">
-              <button
-                type="button"
-                className={`kitchen-status ${
-                  formData.openStatus ? "is-open" : "is-closed"
-                }`}
-                onClick={toggleKitchenStatus}
+          {/* EXISTING KITCHEN HERO */}
+
+          {!isCreateMode && (
+            <>
+              <motion.section
+                className="kitchen-hero-card"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
               >
-                {formData.openStatus ? (
-                  <FaToggleOn />
-                ) : (
-                  <FaToggleOff />
-                )}
+                <div className="kitchen-hero-icon">
+                  <FaUtensils />
+                </div>
 
-                <span>
-                  {formData.openStatus ? "OPEN" : "CLOSED"}
-                </span>
-              </button>
+                <div className="kitchen-hero-info">
+                  <div className="kitchen-title-row">
+                    <h2>
+                      {kitchen.kitchenName}
+                    </h2>
 
-              <small>Kitchen Status</small>
-            </div>
-          </motion.section>
+                    <span className="kitchen-provider-badge">
+                      PROVIDER
+                    </span>
+                  </div>
 
-          <div className="kitchen-stats-grid">
-            <motion.div
-              className="kitchen-stat-card"
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="kitchen-stat-icon">
-                <FaUtensilSpoon />
+                  <p className="kitchen-owner">
+                    <FaUser />
+
+                    {kitchen.ownerId?.name ||
+                      "Kitchen Provider"}
+
+                    {kitchen.ownerId?.email && (
+                      <>
+                        <span className="kitchen-meta-divider">
+                          •
+                        </span>
+
+                        <FaEnvelope />
+
+                        {kitchen.ownerId.email}
+                      </>
+                    )}
+                  </p>
+
+                  <div className="kitchen-hero-meta">
+                    <span>
+                      <FaMapMarkerAlt />
+
+                      {kitchen.deliveryAreas?.length
+                        ? `${kitchen.deliveryAreas.length} delivery area${
+                            kitchen.deliveryAreas.length > 1
+                              ? "s"
+                              : ""
+                          }`
+                        : "No delivery areas"}
+                    </span>
+
+                    <span>
+                      <FaClock />
+
+                      {kitchen.timings ||
+                        "Timings not added"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="kitchen-status-wrapper">
+                  <button
+                    type="button"
+                    className={`kitchen-status ${
+                      formData.openStatus
+                        ? "is-open"
+                        : "is-closed"
+                    }`}
+                    onClick={toggleKitchenStatus}
+                  >
+                    {formData.openStatus ? (
+                      <FaToggleOn />
+                    ) : (
+                      <FaToggleOff />
+                    )}
+
+                    <span>
+                      {formData.openStatus
+                        ? "OPEN"
+                        : "CLOSED"}
+                    </span>
+                  </button>
+
+                  <small>
+                    Kitchen Status
+                  </small>
+                </div>
+              </motion.section>
+
+              {/* STATS */}
+
+              <div className="kitchen-stats-grid">
+                <div className="kitchen-stat-card">
+                  <div className="kitchen-stat-icon">
+                    <FaUtensilSpoon />
+                  </div>
+
+                  <div>
+                    <strong>
+                      {kitchen.totalMeals ?? 0}
+                    </strong>
+
+                    <span>Total Meals</span>
+                  </div>
+                </div>
+
+                <div className="kitchen-stat-card">
+                  <div className="kitchen-stat-icon">
+                    <FaUsers />
+                  </div>
+
+                  <div>
+                    <strong>
+                      {kitchen.totalSubscribers ?? 0}
+                    </strong>
+
+                    <span>Subscribers</span>
+                  </div>
+                </div>
+
+                <div className="kitchen-stat-card">
+                  <div className="kitchen-stat-icon">
+                    <FaTruck />
+                  </div>
+
+                  <div>
+                    <strong>
+                      {kitchen.estimatedDeliveryTime ||
+                        "—"}
+                    </strong>
+
+                    <span>Delivery Time</span>
+                  </div>
+                </div>
+
+                <div className="kitchen-stat-card">
+                  <div className="kitchen-stat-icon">
+                    <FaRupeeSign />
+                  </div>
+
+                  <div>
+                    <strong>
+                      ₹{kitchen.minimumOrderAmount ?? 0}
+                    </strong>
+
+                    <span>Minimum Order</span>
+                  </div>
+                </div>
               </div>
+            </>
+          )}
 
-              <div>
-                <strong>{kitchen.totalMeals ?? 0}</strong>
-                <span>Total Meals</span>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="kitchen-stat-card"
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-            >
-              <div className="kitchen-stat-icon">
-                <FaUsers />
-              </div>
-
-              <div>
-                <strong>{kitchen.totalSubscribers ?? 0}</strong>
-                <span>Subscribers</span>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="kitchen-stat-card"
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="kitchen-stat-icon">
-                <FaTruck />
-              </div>
-
-              <div>
-                <strong>
-                  {kitchen.estimatedDeliveryTime || "—"}
-                </strong>
-                <span>Delivery Time</span>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="kitchen-stat-card"
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-            >
-              <div className="kitchen-stat-icon">
-                <FaRupeeSign />
-              </div>
-
-              <div>
-                <strong>
-                  ₹{kitchen.minimumOrderAmount ?? 0}
-                </strong>
-                <span>Minimum Order</span>
-              </div>
-            </motion.div>
-          </div>
+          {/* KITCHEN FORM */}
 
           <form onSubmit={handleSave}>
             <div className="kitchen-content-grid">
-              <motion.section
-                className="kitchen-card"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
+
+              {/* BASIC INFORMATION */}
+
+              <motion.section className="kitchen-card">
                 <div className="kitchen-card-header">
                   <div className="kitchen-section-icon">
                     <FaStore />
                   </div>
 
                   <div>
-                    <h2>Kitchen Information</h2>
+                    <h2>
+                      Kitchen Information
+                    </h2>
+
                     <p>
-                      Keep your kitchen identity and description
-                      updated.
+                      Add your kitchen identity and
+                      description.
                     </p>
                   </div>
                 </div>
 
                 <div className="kitchen-fields">
+
                   <div className="kitchen-field">
-                    <label htmlFor="kitchenName">
-                      Kitchen Name
+                    <label>
+                      Kitchen Name *
                     </label>
 
                     <div className="kitchen-input">
                       <FaStore />
 
                       <input
-                        id="kitchenName"
                         name="kitchenName"
                         value={formData.kitchenName}
                         onChange={handleChange}
-                        placeholder="Enter kitchen name"
+                        placeholder="e.g. Lucknow Gharana Kitchen"
                       />
                     </div>
                   </div>
 
                   <div className="kitchen-field">
-                    <label htmlFor="description">
-                      Kitchen Description
+                    <label>
+                      Kitchen Description *
                     </label>
 
                     <div className="kitchen-textarea">
                       <FaShieldAlt />
 
                       <textarea
-                        id="description"
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
-                        placeholder="Describe your kitchen..."
+                        placeholder="Tell customers about your kitchen, food quality and speciality..."
                         rows="6"
                       />
                     </div>
@@ -618,12 +740,9 @@ const KitchenProfile = () => {
                 </div>
               </motion.section>
 
-              <motion.section
-                className="kitchen-card"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-              >
+              {/* OPERATIONS */}
+
+              <motion.section className="kitchen-card">
                 <div className="kitchen-card-header">
                   <div className="kitchen-section-icon">
                     <FaClock />
@@ -631,21 +750,25 @@ const KitchenProfile = () => {
 
                   <div>
                     <h2>Operations</h2>
+
                     <p>
-                      Configure timings, delivery and minimum order.
+                      Configure timings and delivery
+                      settings.
                     </p>
                   </div>
                 </div>
 
                 <div className="kitchen-fields">
+
                   <div className="kitchen-field">
-                    <label htmlFor="timings">Operating Hours</label>
+                    <label>
+                      Operating Hours *
+                    </label>
 
                     <div className="kitchen-input">
                       <FaClock />
 
                       <input
-                        id="timings"
                         name="timings"
                         value={formData.timings}
                         onChange={handleChange}
@@ -655,18 +778,20 @@ const KitchenProfile = () => {
                   </div>
 
                   <div className="kitchen-two-column">
+
                     <div className="kitchen-field">
-                      <label htmlFor="estimatedDeliveryTime">
-                        Estimated Delivery
+                      <label>
+                        Estimated Delivery *
                       </label>
 
                       <div className="kitchen-input">
                         <FaTruck />
 
                         <input
-                          id="estimatedDeliveryTime"
                           name="estimatedDeliveryTime"
-                          value={formData.estimatedDeliveryTime}
+                          value={
+                            formData.estimatedDeliveryTime
+                          }
                           onChange={handleChange}
                           placeholder="e.g. 30-45 mins"
                         />
@@ -674,34 +799,33 @@ const KitchenProfile = () => {
                     </div>
 
                     <div className="kitchen-field">
-                      <label htmlFor="minimumOrderAmount">
-                        Minimum Order
+                      <label>
+                        Minimum Order *
                       </label>
 
                       <div className="kitchen-input">
                         <FaRupeeSign />
 
                         <input
-                          id="minimumOrderAmount"
                           name="minimumOrderAmount"
                           type="number"
                           min="0"
-                          value={formData.minimumOrderAmount}
+                          value={
+                            formData.minimumOrderAmount
+                          }
                           onChange={handleChange}
                           placeholder="e.g. 199"
                         />
                       </div>
                     </div>
+
                   </div>
                 </div>
               </motion.section>
 
-              <motion.section
-                className="kitchen-card"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
+              {/* DELIVERY AREAS */}
+
+              <motion.section className="kitchen-card">
                 <div className="kitchen-card-header">
                   <div className="kitchen-section-icon">
                     <FaMapMarkerAlt />
@@ -709,56 +833,71 @@ const KitchenProfile = () => {
 
                   <div>
                     <h2>Delivery Areas</h2>
+
                     <p>
-                      Add locations where your kitchen delivers.
+                      Add areas where you deliver meals.
                     </p>
                   </div>
                 </div>
 
                 <div className="kitchen-list">
                   <AnimatePresence>
-                    {formData.deliveryAreas.map((area, index) => (
-                      <motion.div
-                        className="kitchen-list-item"
-                        key={`area-${index}`}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                      >
-                        <div className="kitchen-list-number">
-                          {index + 1}
-                        </div>
+                    {formData.deliveryAreas.map(
+                      (area, index) => (
+                        <motion.div
+                          className="kitchen-list-item"
+                          key={`area-${index}`}
+                          initial={{
+                            opacity: 0,
+                            height: 0,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            height: "auto",
+                          }}
+                          exit={{
+                            opacity: 0,
+                            height: 0,
+                          }}
+                        >
+                          <div className="kitchen-list-number">
+                            {index + 1}
+                          </div>
 
-                        <div className="kitchen-input">
-                          <FaMapMarkerAlt />
+                          <div className="kitchen-input">
+                            <FaMapMarkerAlt />
 
-                          <input
-                            value={area}
-                            onChange={(e) =>
-                              handleDeliveryAreaChange(
-                                index,
-                                e.target.value,
-                              )
-                            }
-                            placeholder={`Delivery area ${
-                              index + 1
-                            }`}
-                          />
-                        </div>
+                            <input
+                              value={area}
+                              onChange={(e) =>
+                                handleDeliveryAreaChange(
+                                  index,
+                                  e.target.value
+                                )
+                              }
+                              placeholder={`Delivery area ${
+                                index + 1
+                              }`}
+                            />
+                          </div>
 
-                        {formData.deliveryAreas.length > 1 && (
-                          <button
-                            type="button"
-                            className="kitchen-delete-btn"
-                            onClick={() =>
-                              removeDeliveryArea(index)
-                            }
-                          >
-                            <FaTrash />
-                          </button>
-                        )}
-                      </motion.div>
-                    ))}
+                          {formData.deliveryAreas.length >
+                            1 && (
+                            <button
+                              type="button"
+                              className="kitchen-delete-btn"
+                              onClick={() =>
+                                removeDeliveryArea(
+                                  index
+                                )
+                              }
+                            >
+                              <FaTrash />
+                            </button>
+                          )}
+                        </motion.div>
+                      )
+                    )}
                   </AnimatePresence>
                 </div>
 
@@ -772,12 +911,9 @@ const KitchenProfile = () => {
                 </button>
               </motion.section>
 
-              <motion.section
-                className="kitchen-card"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-              >
+              {/* GALLERY */}
+
+              <motion.section className="kitchen-card">
                 <div className="kitchen-card-header">
                   <div className="kitchen-section-icon">
                     <FaImage />
@@ -785,54 +921,69 @@ const KitchenProfile = () => {
 
                   <div>
                     <h2>Kitchen Gallery</h2>
+
                     <p>
-                      Add image URLs for your kitchen gallery.
+                      Add photos of your kitchen and food.
                     </p>
                   </div>
                 </div>
 
                 <div className="kitchen-list">
                   <AnimatePresence>
-                    {formData.gallery.map((image, index) => (
-                      <motion.div
-                        className="kitchen-list-item"
-                        key={`gallery-${index}`}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                      >
-                        <div className="kitchen-list-number">
-                          <FaImage />
-                        </div>
+                    {formData.gallery.map(
+                      (image, index) => (
+                        <motion.div
+                          className="kitchen-list-item"
+                          key={`gallery-${index}`}
+                          initial={{
+                            opacity: 0,
+                            height: 0,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            height: "auto",
+                          }}
+                          exit={{
+                            opacity: 0,
+                            height: 0,
+                          }}
+                        >
+                          <div className="kitchen-list-number">
+                            <FaImage />
+                          </div>
 
-                        <div className="kitchen-input">
-                          <FaImage />
+                          <div className="kitchen-input">
+                            <FaImage />
 
-                          <input
-                            value={image}
-                            onChange={(e) =>
-                              handleGalleryChange(
-                                index,
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Paste image URL"
-                          />
-                        </div>
+                            <input
+                              value={image}
+                              onChange={(e) =>
+                                handleGalleryChange(
+                                  index,
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Paste image URL"
+                            />
+                          </div>
 
-                        {formData.gallery.length > 1 && (
-                          <button
-                            type="button"
-                            className="kitchen-delete-btn"
-                            onClick={() =>
-                              removeGalleryImage(index)
-                            }
-                          >
-                            <FaTrash />
-                          </button>
-                        )}
-                      </motion.div>
-                    ))}
+                          {formData.gallery.length >
+                            1 && (
+                            <button
+                              type="button"
+                              className="kitchen-delete-btn"
+                              onClick={() =>
+                                removeGalleryImage(
+                                  index
+                                )
+                              }
+                            >
+                              <FaTrash />
+                            </button>
+                          )}
+                        </motion.div>
+                      )
+                    )}
                   </AnimatePresence>
                 </div>
 
@@ -842,27 +993,33 @@ const KitchenProfile = () => {
                   onClick={addGalleryImage}
                 >
                   <FaPlus />
-                  Add Image
+                  Add Kitchen Image
                 </button>
               </motion.section>
 
-              <motion.section
-                className="kitchen-save-card"
-                initial={{ opacity: 0, y: 25 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
+              {/* SAVE */}
+
+              <motion.section className="kitchen-save-card">
                 <div>
                   <div className="kitchen-save-icon">
-                    <FaSave />
+                    {isCreateMode ? (
+                      <FaStore />
+                    ) : (
+                      <FaSave />
+                    )}
                   </div>
 
                   <div>
-                    <h2>Save Kitchen Changes</h2>
+                    <h2>
+                      {isCreateMode
+                        ? "Create Your Kitchen"
+                        : "Save Kitchen Changes"}
+                    </h2>
 
                     <p>
-                      Your updated kitchen information will be saved
-                      to your provider account.
+                      {isCreateMode
+                        ? "Complete the setup to activate your provider dashboard."
+                        : "Your updated kitchen information will be saved to your provider account."}
                     </p>
                   </div>
                 </div>
@@ -875,12 +1032,21 @@ const KitchenProfile = () => {
                   {saving ? (
                     <>
                       <span className="kitchen-spinner" />
-                      Saving...
+                      {isCreateMode
+                        ? "Creating..."
+                        : "Saving..."}
                     </>
                   ) : (
                     <>
-                      <FaSave />
-                      Save Kitchen
+                      {isCreateMode ? (
+                        <FaStore />
+                      ) : (
+                        <FaSave />
+                      )}
+
+                      {isCreateMode
+                        ? "Create Kitchen"
+                        : "Save Kitchen"}
                     </>
                   )}
                 </button>
