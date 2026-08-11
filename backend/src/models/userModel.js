@@ -2,42 +2,81 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    // Basic Details
+    // =====================================================
+    // BASIC DETAILS
+    // =====================================================
     name: {
       type: String,
-      required: true,
+      required: [true, "Name is required."],
+      trim: true,
+      minlength: [2, "Name must be at least 2 characters long."],
+      maxlength: [50, "Name cannot exceed 50 characters."],
+      match: [
+        /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/,
+        "Name can contain only letters, spaces, apostrophes and hyphens.",
+      ],
     },
 
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required."],
       unique: true,
+      trim: true,
+      lowercase: true,
+      match: [
+        /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
+        "Please enter a valid email address.",
+      ],
     },
 
     password: {
       type: String,
-      required: true,
+      required: [true, "Password is required."],
     },
 
-    // User Role
+    // =====================================================
+    // USER ROLE
+    // =====================================================
     role: {
       type: String,
       enum: ["admin", "customer", "provider"],
       default: "customer",
     },
 
-    // Contact Details
+    // =====================================================
+    // CONTACT NUMBER
+    // Stored as NUMBER in MongoDB
+    // =====================================================
     contactNumber: {
       type: Number,
+      min: [6000000000, "Please enter a valid 10-digit phone number."],
+      max: [9999999999, "Please enter a valid 10-digit phone number."],
     },
 
-    // Multiple Addresses
+    // =====================================================
+    // MULTIPLE ADDRESSES
+    // =====================================================
     addresses: {
       type: [String],
       default: [],
+
+      validate: {
+        validator: function (addresses) {
+          return addresses.every(
+            (address) =>
+              typeof address === "string" &&
+              address.trim().length >= 10 &&
+              address.trim().length <= 200,
+          );
+        },
+
+        message: "Each address must be between 10 and 200 characters.",
+      },
     },
 
-    // Cart
+    // =====================================================
+    // CART
+    // =====================================================
     cart: [
       {
         mealId: {
@@ -52,7 +91,9 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    // Subscribed Kitchens
+    // =====================================================
+    // SUBSCRIBED KITCHENS
+    // =====================================================
     subscriptions: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -60,7 +101,9 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    // Wishlist
+    // =====================================================
+    // WISHLIST
+    // =====================================================
     wishlist: [
       {
         type: mongoose.Schema.Types.ObjectId,

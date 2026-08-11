@@ -11,7 +11,11 @@ export default function Login() {
   const [role, setRole] = useState("customer");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loginForm, setLoginForm] = useState({
+    email: "",
+    password: "",
+  });
+
   const [registerForm, setRegisterForm] = useState({
     name: "",
     email: "",
@@ -24,29 +28,64 @@ export default function Login() {
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const handleLoginChange = (e) =>
-    setLoginForm({ ...loginForm, [e.target.name]: e.target.value });
+  // =====================================================
+  // LOGIN CHANGE
+  // =====================================================
+  const handleLoginChange = (e) => {
+    setLoginForm({
+      ...loginForm,
+      [e.target.name]: e.target.value,
+    });
+  };
 
-  const handleRegisterChange = (e) =>
-    setRegisterForm({ ...registerForm, [e.target.name]: e.target.value });
+  // =====================================================
+  // REGISTER CHANGE
+  // =====================================================
+  const handleRegisterChange = (e) => {
+    const { name, value } = e.target;
 
+    // Phone: allow ONLY digits on frontend
+    if (name === "contactNumber") {
+      if (!/^\d*$/.test(value)) {
+        return;
+      }
+
+      if (value.length > 10) {
+        return;
+      }
+    }
+
+    setRegisterForm({
+      ...registerForm,
+      [name]: value,
+    });
+  };
+
+  // =====================================================
+  // SWITCH LOGIN / REGISTER
+  // =====================================================
   const switchMode = (newMode) => {
     setMode(newMode);
     setError("");
     setSuccessMsg("");
   };
+
+  // =====================================================
+  // LOGIN SUBMIT
+  // =====================================================
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
     setLoading(true);
 
-    const res = await login(loginForm.email, loginForm.password);
+    const cleanEmail = loginForm.email.trim().toLowerCase();
+
+    const res = await login(cleanEmail, loginForm.password);
 
     setLoading(false);
 
     if (res.success) {
-      // Navbar ko notify karega ki user login ho gaya
       window.dispatchEvent(new Event("login"));
 
       navigate("/");
@@ -55,30 +94,179 @@ export default function Login() {
     }
   };
 
+  // =====================================================
+  // REGISTER SUBMIT
+  // =====================================================
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
+
     setError("");
     setSuccessMsg("");
+
+    // ===================================================
+    // CLEAN VALUES
+    // ===================================================
+
+    const name = registerForm.name.trim();
+
+    const email = registerForm.email.trim().toLowerCase();
+
+    const password = registerForm.password;
+
+    const contactNumber = registerForm.contactNumber.trim();
+
+    const address = registerForm.address.trim();
+
+    // ===================================================
+    // NAME VALIDATION
+    // ===================================================
+
+    if (!name) {
+      setError("Please enter your full name.");
+      return;
+    }
+
+    if (name.length < 2 || name.length > 50) {
+      setError("Name must be between 2 and 50 characters.");
+      return;
+    }
+
+    if (!/^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/.test(name)) {
+      setError(
+        "Name can contain only letters, spaces, apostrophes and hyphens.",
+      );
+      return;
+    }
+
+    // ===================================================
+    // EMAIL VALIDATION
+    // ===================================================
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    // Reject 123@gmail.com
+    const emailLocalPart = email.split("@")[0];
+
+    if (/^\d+$/.test(emailLocalPart)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    // ===================================================
+    // PASSWORD VALIDATION
+    // ===================================================
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (password.length > 72) {
+      setError("Password cannot exceed 72 characters.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError("Password must contain at least one uppercase letter.");
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      setError("Password must contain at least one lowercase letter.");
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setError("Password must contain at least one number.");
+      return;
+    }
+
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      setError("Password must contain at least one special character.");
+      return;
+    }
+
+    // ===================================================
+    // PHONE VALIDATION
+    // ===================================================
+
+    if (contactNumber) {
+      // Only digits
+      if (!/^\d+$/.test(contactNumber)) {
+        setError("Phone number can contain only digits.");
+        return;
+      }
+
+      // Exactly 10 digits
+      if (contactNumber.length !== 10) {
+        setError("Phone number must be exactly 10 digits.");
+        return;
+      }
+
+      // Starts from 6-9
+      if (!/^[6-9]\d{9}$/.test(contactNumber)) {
+        setError("Please enter a valid 10-digit phone number.");
+        return;
+      }
+    }
+
+    // ===================================================
+    // ADDRESS VALIDATION
+    // ===================================================
+
+    if (address && (address.length < 10 || address.length > 200)) {
+      setError("Address must be between 10 and 200 characters.");
+      return;
+    }
+
+    // ===================================================
+    // START LOADING
+    // ===================================================
+
     setLoading(true);
 
+    // ===================================================
+    // PAYLOAD
+    // Phone is converted to NUMBER here
+    // ===================================================
+
     const payload = {
-      name: registerForm.name,
-      email: registerForm.email,
-      password: registerForm.password,
+      name,
+      email,
+      password,
       role,
-      contactNumber: registerForm.contactNumber
-        ? Number(registerForm.contactNumber)
-        : undefined,
-      addresses: registerForm.address ? [registerForm.address] : [],
+
+      contactNumber: contactNumber ? Number(contactNumber) : undefined,
+
+      addresses: address ? [address] : [],
     };
 
+    // ===================================================
+    // REGISTER API
+    // ===================================================
+
     const res = await register(payload);
+
     setLoading(false);
+
+    // ===================================================
+    // SUCCESS
+    // ===================================================
 
     if (res.success) {
       setSuccessMsg("Account created! Redirecting to login...");
-      setLoginForm({ email: registerForm.email, password: "" });
-      setTimeout(() => switchMode("login"), 1000);
+
+      setLoginForm({
+        email,
+        password: "",
+      });
+
+      setTimeout(() => {
+        switchMode("login");
+      }, 1000);
     } else {
       setError(res.message);
     }
@@ -87,11 +275,13 @@ export default function Login() {
   return (
     <div className="auth-page">
       {/* ===== LEFT ILLUSTRATION PANEL ===== */}
+
       <div className="auth-illustration-panel">
         <div className="auth-ribbon-shape" />
 
         <div className="auth-nav-mini">
           <span className="auth-logo-dot" />
+
           <span onClick={() => navigate("/")}>Lucknow Meal Cart</span>
         </div>
 
@@ -101,11 +291,13 @@ export default function Login() {
             src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80"
             alt="Fresh salad bowl"
           />
+
           <img
             className="auth-plate auth-plate-2"
             src="https://images.unsplash.com/photo-1512152272829-e3139592d56f?w=400&q=80"
             alt="Grilled meal"
           />
+
           <img
             className="auth-plate auth-plate-3"
             src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=380&q=80"
@@ -118,6 +310,7 @@ export default function Login() {
               <br />
               <span>Delivered Fresh.</span>
             </h2>
+
             <p>Join thousands enjoying meals from trusted home kitchens.</p>
           </div>
         </div>
@@ -148,6 +341,7 @@ export default function Login() {
             <span className="auth-header-tag">
               {mode === "login" ? "Welcome back" : "Get started"}
             </span>
+
             <h1>
               {mode === "login" ? (
                 <>
@@ -161,6 +355,10 @@ export default function Login() {
             </h1>
           </div>
 
+          {/* =================================================
+              TABS
+          ================================================= */}
+
           <div className="auth-tabs">
             <button
               className={`auth-tab ${mode === "login" ? "active" : ""}`}
@@ -169,6 +367,7 @@ export default function Login() {
             >
               Login
             </button>
+
             <button
               className={`auth-tab ${mode === "register" ? "active" : ""}`}
               onClick={() => switchMode("register")}
@@ -176,6 +375,7 @@ export default function Login() {
             >
               Register
             </button>
+
             <span
               className="auth-tab-indicator"
               style={{
@@ -184,6 +384,10 @@ export default function Login() {
               }}
             />
           </div>
+
+          {/* =================================================
+              ERROR
+          ================================================= */}
 
           {error && (
             <div className="auth-alert auth-alert-error">
@@ -195,6 +399,7 @@ export default function Login() {
                   stroke="currentColor"
                   strokeWidth="2"
                 />
+
                 <path
                   d="M12 8v5M12 16h.01"
                   stroke="currentColor"
@@ -202,9 +407,15 @@ export default function Login() {
                   strokeLinecap="round"
                 />
               </svg>
+
               {error}
             </div>
           )}
+
+          {/* =================================================
+              SUCCESS
+          ================================================= */}
+
           {successMsg && (
             <div className="auth-alert auth-alert-success">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -216,9 +427,14 @@ export default function Login() {
                   strokeLinejoin="round"
                 />
               </svg>
+
               {successMsg}
             </div>
           )}
+
+          {/* =================================================
+              LOGIN FORM
+          ================================================= */}
 
           {mode === "login" && (
             <form
@@ -236,6 +452,7 @@ export default function Login() {
                   required
                   autoComplete="email"
                 />
+
                 <label>Email address</label>
               </div>
 
@@ -249,7 +466,9 @@ export default function Login() {
                   required
                   autoComplete="current-password"
                 />
+
                 <label>Password</label>
+
                 <button
                   type="button"
                   className="auth-eye-btn"
@@ -274,6 +493,7 @@ export default function Login() {
                         strokeWidth="1.8"
                         strokeLinejoin="round"
                       />
+
                       <circle
                         cx="12"
                         cy="12"
@@ -292,6 +512,7 @@ export default function Login() {
                 disabled={loading}
               >
                 <span className="auth-submit-btn-bg" />
+
                 {loading ? (
                   <span className="auth-spinner" />
                 ) : (
@@ -317,12 +538,18 @@ export default function Login() {
             </form>
           )}
 
+          {/* =================================================
+              REGISTER FORM
+          ================================================= */}
+
           {mode === "register" && (
             <form
               className="auth-form"
               onSubmit={handleRegisterSubmit}
               key="register-form"
             >
+              {/* ROLE */}
+
               <div className="auth-role-toggle">
                 <div
                   className="auth-role-slider"
@@ -333,9 +560,12 @@ export default function Login() {
                         : "translateX(100%)",
                   }}
                 />
+
                 <button
                   type="button"
-                  className={`auth-role-btn ${role === "customer" ? "active" : ""}`}
+                  className={`auth-role-btn ${
+                    role === "customer" ? "active" : ""
+                  }`}
                   onClick={() => setRole("customer")}
                 >
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
@@ -346,6 +576,7 @@ export default function Login() {
                       stroke="currentColor"
                       strokeWidth="1.8"
                     />
+
                     <path
                       d="M4.5 20c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"
                       stroke="currentColor"
@@ -355,9 +586,12 @@ export default function Login() {
                   </svg>
                   Customer
                 </button>
+
                 <button
                   type="button"
-                  className={`auth-role-btn ${role === "provider" ? "active" : ""}`}
+                  className={`auth-role-btn ${
+                    role === "provider" ? "active" : ""
+                  }`}
                   onClick={() => setRole("provider")}
                 >
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
@@ -373,6 +607,8 @@ export default function Login() {
                 </button>
               </div>
 
+              {/* NAME */}
+
               <div className="auth-field">
                 <input
                   type="text"
@@ -381,10 +617,14 @@ export default function Login() {
                   value={registerForm.name}
                   onChange={handleRegisterChange}
                   required
+                  maxLength={50}
                   autoComplete="name"
                 />
+
                 <label>Full name</label>
               </div>
+
+              {/* EMAIL */}
 
               <div className="auth-field">
                 <input
@@ -396,8 +636,11 @@ export default function Login() {
                   required
                   autoComplete="email"
                 />
+
                 <label>Email address</label>
               </div>
+
+              {/* PASSWORD */}
 
               <div className="auth-field">
                 <input
@@ -407,10 +650,13 @@ export default function Login() {
                   value={registerForm.password}
                   onChange={handleRegisterChange}
                   required
-                  minLength={6}
+                  minLength={8}
+                  maxLength={72}
                   autoComplete="new-password"
                 />
+
                 <label>Password</label>
+
                 <button
                   type="button"
                   className="auth-eye-btn"
@@ -435,6 +681,7 @@ export default function Login() {
                         strokeWidth="1.8"
                         strokeLinejoin="round"
                       />
+
                       <circle
                         cx="12"
                         cy="12"
@@ -447,6 +694,8 @@ export default function Login() {
                 </button>
               </div>
 
+              {/* PHONE + ADDRESS */}
+
               <div className="auth-field-row">
                 <div className="auth-field">
                   <input
@@ -455,7 +704,10 @@ export default function Login() {
                     placeholder=" "
                     value={registerForm.contactNumber}
                     onChange={handleRegisterChange}
+                    maxLength={10}
+                    inputMode="numeric"
                   />
+
                   <label>Phone</label>
                 </div>
 
@@ -466,10 +718,14 @@ export default function Login() {
                     placeholder=" "
                     value={registerForm.address}
                     onChange={handleRegisterChange}
+                    maxLength={200}
                   />
+
                   <label>Address</label>
                 </div>
               </div>
+
+              {/* SUBMIT */}
 
               <button
                 type="submit"
@@ -477,6 +733,7 @@ export default function Login() {
                 disabled={loading}
               >
                 <span className="auth-submit-btn-bg" />
+
                 {loading ? (
                   <span className="auth-spinner" />
                 ) : (
