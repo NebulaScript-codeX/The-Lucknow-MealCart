@@ -95,7 +95,7 @@ export default function Meal() {
     if (activeFilter === "nonveg") {
       filtered = filtered.filter(
         (meal) =>
-          meal.vegOrNonVeg && meal.vegOrNonVeg.toLowerCase() === "nonveg",
+          meal.vegOrNonVeg && meal.vegOrNonVeg.toLowerCase() === "non-veg",
       );
     }
 
