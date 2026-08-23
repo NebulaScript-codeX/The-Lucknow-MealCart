@@ -17,7 +17,7 @@ import Profile from "./pages/Profile/Profile";
 import Order from "./pages/Order/Order";
 import TrackOrder from "./pages/TrackOrder/TrackOrder";
 import Subscriptions from "./pages/Subscriptions/Subscriptions";
-import MySubscriptions from "./pages/MySubscriptions/MySubscriptions";
+import MySubscriptions from "./pages/Mysubscriptions/Mysubscriptions";
 import CustomerDashboard from "./pages/Dashboard/CustomerDashboard";
 import ReviewsRatings from "./pages/ReviewsRatings/ReviewsRatings";
 
