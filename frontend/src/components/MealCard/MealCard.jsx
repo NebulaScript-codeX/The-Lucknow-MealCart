@@ -1,7 +1,11 @@
 import React, { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import { useCart } from "../../context/CartContext";
+
 import toast from "react-hot-toast";
+
 import axiosInstance from "../../utils/axiosInstance";
 
 export default function MealCard({ meal }) {
@@ -14,12 +18,17 @@ export default function MealCard({ meal }) {
   const isAdding = addingMealId === meal._id;
 
   // Backend field
-  // IMPORTANT:
   // Do NOT visually change unavailable cards here.
   const isAvailable = meal.isAvailable !== false;
 
+  // Production-safe meal image URL
   const imageUrl = meal.image
-    ? `http://localhost:4000/${meal.image.replace(/\\/g, "/")}`
+    ? meal.image.startsWith("http://") || meal.image.startsWith("https://")
+      ? meal.image
+      : `https://the-lucknow-mealcart.onrender.com/${meal.image.replace(
+          /\\/g,
+          "/",
+        )}`
     : "https://placehold.co/400x400?text=Meal";
 
   // ==========================================
@@ -29,9 +38,6 @@ export default function MealCard({ meal }) {
   const handleAdd = async (e) => {
     e.stopPropagation();
 
-    // Unavailable meal:
-    // card remains completely normal,
-    // only clicking cart tells the user.
     if (!isAvailable) {
       toast.error("This meal is currently unavailable.");
       return;
@@ -47,7 +53,6 @@ export default function MealCard({ meal }) {
       }
     } catch (error) {
       console.error("Add to cart error:", error);
-
       toast.error("Unable to add meal to cart.");
     }
   };
@@ -71,15 +76,10 @@ export default function MealCard({ meal }) {
 
         window.dispatchEvent(new Event("favoriteUpdated"));
       } else {
-        toast.error(
-          res.data.message || "Unable to add favorite."
-        );
+        toast.error(res.data.message || "Unable to add favorite.");
       }
     } catch (err) {
-      toast.error(
-        err.response?.data?.message ||
-          "Unable to add favorite."
-      );
+      toast.error(err.response?.data?.message || "Unable to add favorite.");
     }
   };
 
@@ -108,9 +108,7 @@ export default function MealCard({ meal }) {
       ====================================== */}
 
       <button
-        className={`meal-card-fav ${
-          isFavorite ? "active" : ""
-        }`}
+        className={`meal-card-fav ${isFavorite ? "active" : ""}`}
         onClick={toggleFavorite}
         aria-label="Favourite"
         type="button"
@@ -136,22 +134,13 @@ export default function MealCard({ meal }) {
       ====================================== */}
 
       <div className="meal-card-photo-wrap">
-        <img
-          src={imageUrl}
-          alt={meal.title}
-          className="meal-card-photo"
-        />
+        <img src={imageUrl} alt={meal.title} className="meal-card-photo" />
 
         {meal.rating && (
           <span className="meal-card-rating">
             {meal.rating}
 
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="#f5b400"
-            >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="#f5b400">
               <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L6 21l1.6-7L2.2 9.2l7.1-.6L12 2z" />
             </svg>
           </span>
@@ -163,13 +152,9 @@ export default function MealCard({ meal }) {
       ====================================== */}
 
       <div className="meal-card-body">
-        <h3 className="meal-card-name">
-          {meal.title}
-        </h3>
+        <h3 className="meal-card-name">{meal.title}</h3>
 
-        <p className="meal-card-kitchen">
-          {meal.category || "Homemade Meal"}
-        </p>
+        <p className="meal-card-kitchen">{meal.category || "Homemade Meal"}</p>
 
         <div className="meal-card-footer">
           <div className="meal-card-left">
@@ -182,21 +167,14 @@ export default function MealCard({ meal }) {
               onClick={handleAdd}
               disabled={isAdding}
               aria-label={
-                isAvailable
-                  ? "Add to cart"
-                  : "Meal currently unavailable"
+                isAvailable ? "Add to cart" : "Meal currently unavailable"
               }
               type="button"
             >
               {isAdding ? (
                 <span className="meal-card-add-spinner" />
               ) : (
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.8h7.2a2 2 0 0 0 2-1.6L20 8H6"
                     stroke="#fff"
@@ -205,19 +183,9 @@ export default function MealCard({ meal }) {
                     strokeLinejoin="round"
                   />
 
-                  <circle
-                    cx="9"
-                    cy="21"
-                    r="1.3"
-                    fill="#fff"
-                  />
+                  <circle cx="9" cy="21" r="1.3" fill="#fff" />
 
-                  <circle
-                    cx="17"
-                    cy="21"
-                    r="1.3"
-                    fill="#fff"
-                  />
+                  <circle cx="17" cy="21" r="1.3" fill="#fff" />
                 </svg>
               )}
             </button>
@@ -228,9 +196,7 @@ export default function MealCard({ meal }) {
 
             <div
               className={`meal-card-type ${
-                meal.vegOrNonVeg?.toLowerCase() === "veg"
-                  ? "veg"
-                  : "nonveg"
+                meal.vegOrNonVeg?.toLowerCase() === "veg" ? "veg" : "nonveg"
               }`}
             >
               <span />
@@ -239,9 +205,7 @@ export default function MealCard({ meal }) {
 
           {/* PRICE */}
 
-          <span className="meal-card-price">
-            ₹{meal.price}
-          </span>
+          <span className="meal-card-price">₹{meal.price}</span>
         </div>
       </div>
     </div>

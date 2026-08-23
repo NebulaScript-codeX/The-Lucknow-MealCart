@@ -19,22 +19,23 @@ export default function Footer() {
 
         <div className="footer-container">
           {/* ================= CTA ================= */}
+
           <div className="footer-cta">
             <div className="cta-left">
               <span className="cta-tag">🍲 Fresh Home Cooked Meals</span>
+
               <h2>
                 Ready to taste <span>homemade happiness?</span>
               </h2>
+
               <p>
                 Discover delicious homemade meals prepared by trusted kitchens
                 across Lucknow, delivered fresh to your doorstep.
               </p>
             </div>
 
-            <button className="cta-btn">
-              <a href="/meal/all" className="cta-btn">
-                Order Now
-              </a>
+            <Link to="/meal/all" className="cta-btn">
+              Order Now
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M5 12h14M13 6l6 6-6 6"
@@ -44,14 +45,16 @@ export default function Footer() {
                   strokeLinejoin="round"
                 />
               </svg>
-            </button>
+            </Link>
           </div>
 
           <div className="footer-divider"></div>
 
           {/* ================= MAIN FOOTER ================= */}
+
           <div className="footer-grid">
-            {/* BRAND — same logo icon as Navbar */}
+            {/* ================= BRAND ================= */}
+
             <div className="footer-brand">
               <div className="footer-logo">
                 <div className="logo-circle">
@@ -69,6 +72,7 @@ export default function Footer() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
+
                     <path
                       d="M17 2c-2 1.5-2 4-2 6s1 3 2 3v11"
                       stroke="currentColor"
@@ -83,6 +87,7 @@ export default function Footer() {
                   <h3>
                     The Lucknow<span> Meal Cart</span>
                   </h3>
+
                   <small>Home Made • Fresh • Hygienic</small>
                 </div>
               </div>
@@ -92,19 +97,22 @@ export default function Footer() {
                 Lucknow directly to your doorstep with freshness, love and care.
               </p>
 
+              {/* ================= SOCIAL ================= */}
+
               <div className="footer-social">
                 <a
-                  href="https://github.com/"
+                  href="https://github.com/NebulaScript-codeX"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   aria-label="GitHub"
                 >
                   <FaGithub />
                 </a>
+
                 <a
-                  href="https://linkedin.com/"
+                  href="www.linkedin.com/in/shrestha-awasthi-83708634a"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   aria-label="LinkedIn"
                 >
                   <FaLinkedinIn />
@@ -112,43 +120,62 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* LINKS */}
+            {/* ================= QUICK LINKS ================= */}
+
             <div className="footer-column">
               <h4>Quick Links</h4>
-              <a href="/">Home</a>
-              <a href="/about">About</a>
-              <a href="/contact">Contact</a>
-              <a href="/favorites">Favorites</a>
+
+              <Link to="/">Home</Link>
+
+              <Link to="/about">About</Link>
+
+              <Link to="/contact">Contact</Link>
+
+              <Link to="/favorites">Favorites</Link>
             </div>
 
-            {/* SERVICES */}
+            {/* ================= SERVICES ================= */}
+
             <div className="footer-column">
               <h4>Services</h4>
-              <a href="/meal/all">Browse Meals</a>
-              <a href="/login">Become Provider</a>
-              <a href="/subscriptions">Subscriptions</a>
-              <a href="/orders">Track Orders</a>
+
+              <Link to="/meal/all">Browse Meals</Link>
+
+              <Link to="/login">Become Provider</Link>
+
+              <Link to="/subscriptions">Subscriptions</Link>
+
+              <Link to="/orders">Track Orders</Link>
             </div>
 
-            {/* CONTACT */}
+            {/* ================= CONTACT ================= */}
+
             <div className="footer-column">
               <h4>Contact</h4>
+
               <div className="contact-item">
                 <HiOutlineLocationMarker />
                 <span>Lucknow, Uttar Pradesh</span>
               </div>
+
               <div className="contact-item">
                 <HiOutlinePhone />
-                <span>+91 98765 43210</span>
+
+                <a href="tel:+917007535156">7007535156</a>
               </div>
+
               <div className="contact-item">
                 <HiOutlineMail />
-                <span>support@mealcart.com</span>
+
+                <a href="mailto:awasthishrestha405@gmail.com">
+                  awasthishrestha405@gmail.com
+                </a>
               </div>
             </div>
           </div>
 
           {/* ================= BOTTOM ================= */}
+
           <div className="footer-bottom">
             <p>
               © {new Date().getFullYear()} <span>The Lucknow Meal Cart</span>.
@@ -156,9 +183,11 @@ export default function Footer() {
             </p>
 
             <div className="footer-bottom-links">
-              <a href="/">Privacy</a>
-              <a href="/">Terms</a>
-              <a href="/">Cookies</a>
+              <Link to="/">Privacy</Link>
+
+              <Link to="/">Terms</Link>
+
+              <Link to="/">Cookies</Link>
             </div>
           </div>
         </div>

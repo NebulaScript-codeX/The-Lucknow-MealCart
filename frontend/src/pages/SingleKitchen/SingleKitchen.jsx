@@ -11,6 +11,56 @@ import MealCard from "../../components/MealCard/MealCard";
 import "./SingleKitchen.css";
 
 // =====================================================
+// BACKEND BASE URL
+// =====================================================
+
+const BACKEND_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "http://localhost:4000";
+
+// =====================================================
+// IMAGE URL HELPER
+// =====================================================
+
+const getImageUrl = (image) => {
+  if (!image) return "";
+
+  // Already a complete URL
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("data:")
+  ) {
+    return image;
+  }
+
+  // Normalize Windows paths
+  const normalized = image.replace(/\\/g, "/").replace(/^\/+/, "");
+
+  return `${BACKEND_URL.replace(/\/+$/, "")}/${normalized}`;
+};
+
+// =====================================================
+// PLAN KITCHEN ID HELPER
+// =====================================================
+
+const getPlanKitchenId = (plan) => {
+  if (!plan?.kitchenId) return "";
+
+  if (typeof plan.kitchenId === "object") {
+    return (
+      plan.kitchenId?._id ||
+      plan.kitchenId?.id ||
+      plan.kitchenId?.toString?.() ||
+      ""
+    ).toString();
+  }
+
+  return plan.kitchenId.toString();
+};
+
+// =====================================================
 // PLAN CARD
 // =====================================================
 
@@ -77,41 +127,6 @@ function PlanCard({ plan, onSubscribe, subscribing }) {
 }
 
 // =====================================================
-// IMAGE URL HELPER
-// =====================================================
-
-const getImageUrl = (image) => {
-  if (!image) return "";
-
-  if (image.startsWith("http://") || image.startsWith("https://")) {
-    return image;
-  }
-
-  const normalized = image.replace(/\\/g, "/");
-
-  return `http://localhost:4000/${normalized}`;
-};
-
-// =====================================================
-// KITCHEN ID HELPER
-// =====================================================
-
-const getPlanKitchenId = (plan) => {
-  if (!plan?.kitchenId) return "";
-
-  if (typeof plan.kitchenId === "object") {
-    return (
-      plan.kitchenId?._id ||
-      plan.kitchenId?.id ||
-      plan.kitchenId?.toString?.() ||
-      ""
-    ).toString();
-  }
-
-  return plan.kitchenId.toString();
-};
-
-// =====================================================
 // MAIN COMPONENT
 // =====================================================
 
@@ -126,6 +141,7 @@ export default function SingleKitchen() {
   const [activeTab, setActiveTab] = useState("menu");
 
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
 
   const [subscribing, setSubscribing] = useState(null);
@@ -141,7 +157,7 @@ export default function SingleKitchen() {
         setError("");
 
         // ---------------------------------------------
-        // Kitchen + Meals
+        // FETCH KITCHEN + MEALS
         // ---------------------------------------------
 
         const [kitchenRes, mealsRes] = await Promise.all([
@@ -156,17 +172,11 @@ export default function SingleKitchen() {
           mealsRes.data?.data || mealsRes.data?.meals || mealsRes.data || [];
 
         setKitchen(kitchenData);
-        setMeals(Array.isArray(mealsData) ? mealsData : []);
+
+        setMeals(Array.isArray(mealsData) ? mealsData.filter(Boolean) : []);
 
         // ---------------------------------------------
         // FETCH ALL PLANS
-        // ---------------------------------------------
-        //
-        // Current plan routes have /plan/all.
-        // There is no /plan/kitchen/:kitchenId route.
-        //
-        // So we fetch all plans and filter them according
-        // to this kitchen's ID.
         // ---------------------------------------------
 
         try {
@@ -178,21 +188,25 @@ export default function SingleKitchen() {
             plansRes.data?.allPlans ||
             [];
 
-          const plansArray = Array.isArray(allPlans) ? allPlans : [];
+          const plansArray = Array.isArray(allPlans)
+            ? allPlans.filter(Boolean)
+            : [];
+
+          const currentKitchenId = kitchenId?.toString();
 
           const kitchenPlans = plansArray.filter((plan) => {
             const planKitchenId = getPlanKitchenId(plan);
 
-            return planKitchenId === kitchenId.toString();
+            return planKitchenId === currentKitchenId;
           });
 
           setPlans(kitchenPlans);
 
-          console.log("All Plans:", plansArray);
-          console.log("Kitchen ID:", kitchenId);
+          console.log("Kitchen ID:", currentKitchenId);
+
           console.log("Kitchen Plans:", kitchenPlans);
-        } catch (planErr) {
-          console.error("Fetch subscription plans error:", planErr);
+        } catch (planError) {
+          console.error("Fetch subscription plans error:", planError);
 
           setPlans([]);
         }
@@ -265,6 +279,7 @@ export default function SingleKitchen() {
 
         <div className="single-kitchen-loading">
           <div className="single-kitchen-loader" />
+
           <p>Loading kitchen...</p>
         </div>
 
@@ -289,7 +304,7 @@ export default function SingleKitchen() {
 
           <p>{error || "Kitchen not found."}</p>
 
-          <button onClick={() => navigate("/kitchen/all")}>
+          <button type="button" onClick={() => navigate("/kitchen/all")}>
             ← Back to Kitchens
           </button>
         </div>
@@ -316,6 +331,10 @@ export default function SingleKitchen() {
           src={bannerImage}
           alt={kitchenName}
           className="kitchen-banner-img"
+          onError={(e) => {
+            e.currentTarget.src =
+              "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=1200&q=80";
+          }}
         />
 
         <div className="kitchen-banner-overlay" />

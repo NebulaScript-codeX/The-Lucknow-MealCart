@@ -46,9 +46,10 @@ function SingleMeal() {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const imageUrl = meal?.image
-    ? `http://localhost:4000/${meal.image.replace(/\\/g, "/")}`
+    ? meal.image.startsWith("http://") || meal.image.startsWith("https://")
+      ? meal.image
+      : `https://the-lucknow-mealcart.onrender.com/${meal.image.replace(/\\/g, "/")}`
     : "https://placehold.co/700x700?text=Meal";
-
   // IMPORTANT:
   // Backend Meal model uses "isAvailable"
   const isAvailable = meal?.isAvailable !== false;
@@ -107,9 +108,7 @@ function SingleMeal() {
         toast.error(res.data.message);
       }
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Unable to add favorite."
-      );
+      toast.error(err.response?.data?.message || "Unable to add favorite.");
     } finally {
       setFavoriteLoading(false);
     }
@@ -122,7 +121,7 @@ function SingleMeal() {
       const meals = res.data.data || res.data.meals || [];
 
       const filtered = meals.filter(
-        (m) => m.category === category && m._id !== mealId
+        (m) => m.category === category && m._id !== mealId,
       );
 
       setSimilarMeals(filtered.slice(0, 4));
@@ -163,9 +162,7 @@ function SingleMeal() {
       <>
         <Navbar />
 
-        <div className="single-loading">
-          Loading Meal...
-        </div>
+        <div className="single-loading">Loading Meal...</div>
 
         <Footer />
       </>
@@ -177,9 +174,7 @@ function SingleMeal() {
       <>
         <Navbar />
 
-        <div className="single-loading">
-          Meal not found.
-        </div>
+        <div className="single-loading">Meal not found.</div>
 
         <Footer />
       </>
@@ -197,7 +192,6 @@ function SingleMeal() {
         transition={{ duration: 0.5 }}
       >
         <div className="single-container">
-
           {/* Back Button */}
           <motion.button
             className="single-back"
@@ -226,7 +220,6 @@ function SingleMeal() {
               duration: 0.6,
             }}
           >
-
             {/* ==============================
                 LEFT IMAGE SECTION
             ============================== */}
@@ -255,9 +248,7 @@ function SingleMeal() {
 
               {/* Favourite */}
               <button
-                className={`single-fav ${
-                  favorite ? "active" : ""
-                }`}
+                className={`single-fav ${favorite ? "active" : ""}`}
                 onClick={handleFavorite}
                 disabled={favoriteLoading}
               >
@@ -314,15 +305,11 @@ function SingleMeal() {
                 delay: 0.2,
               }}
             >
-
               <div className="single-top">
-
                 {/* Veg / Non Veg */}
                 <div
                   className={`single-type ${
-                    meal.vegOrNonVeg === "veg"
-                      ? "veg"
-                      : "nonveg"
+                    meal.vegOrNonVeg === "veg" ? "veg" : "nonveg"
                   }`}
                 >
                   {meal.vegOrNonVeg === "veg" ? (
@@ -356,7 +343,6 @@ function SingleMeal() {
                     </>
                   )}
                 </div>
-
               </div>
 
               <h1>{meal.title}</h1>
@@ -366,9 +352,7 @@ function SingleMeal() {
                 {meal.category || "Homemade Meal"}
               </div>
 
-              <p className="single-description">
-                {meal.description}
-              </p>
+              <p className="single-description">{meal.description}</p>
 
               {/* Price */}
               <div className="price-card">
@@ -385,15 +369,12 @@ function SingleMeal() {
 
               {/* Meta Information */}
               <div className="meal-meta-grid">
-
                 <div className="meta-item">
                   <FaFire />
 
                   <div>
                     <span>Meal Type</span>
-                    <strong>
-                      {meal.mealType || "Homemade"}
-                    </strong>
+                    <strong>{meal.mealType || "Homemade"}</strong>
                   </div>
                 </div>
 
@@ -427,30 +408,22 @@ function SingleMeal() {
                     <strong>Coming Soon</strong>
                   </div>
                 </div>
-
               </div>
 
               {/* Quantity + Cart */}
               <div className="quantity-cart-wrapper">
-
                 <div
                   className={`single-quantity ${
                     !isAvailable ? "quantity-disabled" : ""
                   }`}
                 >
-                  <button
-                    onClick={decreaseQty}
-                    disabled={!isAvailable}
-                  >
+                  <button onClick={decreaseQty} disabled={!isAvailable}>
                     <FaMinus />
                   </button>
 
                   <span>{qty}</span>
 
-                  <button
-                    onClick={increaseQty}
-                    disabled={!isAvailable}
-                  >
+                  <button onClick={increaseQty} disabled={!isAvailable}>
                     <FaPlus />
                   </button>
                 </div>
@@ -475,18 +448,13 @@ function SingleMeal() {
                       : {}
                   }
                   onClick={handleAddCart}
-                  disabled={
-                    !isAvailable ||
-                    addingMealId === meal._id
-                  }
+                  disabled={!isAvailable || addingMealId === meal._id}
                 >
                   {isAvailable ? (
                     <>
                       <FaShoppingCart />
 
-                      {addingMealId === meal._id
-                        ? "Adding..."
-                        : "Add To Cart"}
+                      {addingMealId === meal._id ? "Adding..." : "Add To Cart"}
                     </>
                   ) : (
                     <>
@@ -495,12 +463,10 @@ function SingleMeal() {
                     </>
                   )}
                 </motion.button>
-
               </div>
 
               {/* Highlights */}
               <div className="meal-highlights">
-
                 <div className="highlight-card">
                   <FaFire />
                   <span>Chef Special</span>
@@ -515,9 +481,7 @@ function SingleMeal() {
                   <FaClock />
                   <span>Prepared Today</span>
                 </div>
-
               </div>
-
             </motion.div>
           </motion.div>
 
@@ -546,9 +510,7 @@ function SingleMeal() {
               <div className="section-heading">
                 <h2>Similar Meals</h2>
 
-                <p>
-                  You may also like these delicious meals
-                </p>
+                <p>You may also like these delicious meals</p>
               </div>
 
               <div className="similar-grid">
@@ -568,7 +530,6 @@ function SingleMeal() {
               </div>
             </motion.div>
           )}
-
         </div>
       </motion.section>
 

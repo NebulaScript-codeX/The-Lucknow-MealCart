@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import { motion } from "framer-motion";
+
 import { Link, useNavigate } from "react-router-dom";
+
 import "./Checkout.css";
 
 import {
@@ -18,8 +21,11 @@ import {
 import toast from "react-hot-toast";
 
 import Navbar from "../../components/Navbar/Navbar";
+
 import Footer from "../../components/Footer/Footer";
+
 import axiosInstance from "../../utils/axiosInstance";
+
 import { useCart } from "../../context/CartContext";
 
 const Checkout = () => {
@@ -28,7 +34,9 @@ const Checkout = () => {
   const { setCartCount, refreshCart } = useCart();
 
   const [loading, setLoading] = useState(true);
+
   const [placingOrder, setPlacingOrder] = useState(false);
+
   const [cartItems, setCartItems] = useState([]);
 
   const [paymentMethod, setPaymentMethod] = useState("COD");
@@ -45,7 +53,7 @@ const Checkout = () => {
   const [errors, setErrors] = useState({});
 
   // =====================================
-  // FETCH CART (same normalization as Cart page)
+  // FETCH CART
   // =====================================
 
   const fetchCart = async () => {
@@ -87,15 +95,24 @@ const Checkout = () => {
   // =====================================
 
   const getMeal = (item) => {
-    if (item.mealId && typeof item.mealId === "object") return item.mealId;
-    if (item.meal && typeof item.meal === "object") return item.meal;
+    if (item.mealId && typeof item.mealId === "object") {
+      return item.mealId;
+    }
+
+    if (item.meal && typeof item.meal === "object") {
+      return item.meal;
+    }
+
     return {};
   };
 
   const getMealId = (item) => {
     if (item.mealId?._id) return item.mealId._id;
+
     if (typeof item.mealId === "string") return item.mealId;
+
     if (item.meal?._id) return item.meal._id;
+
     return "";
   };
 
@@ -117,22 +134,30 @@ const Checkout = () => {
 
   const getPrice = (item) => {
     const meal = getMeal(item);
+
     return meal.price || item.price || 0;
   };
 
   const getImage = (item) => {
     const meal = getMeal(item);
+
     let image = meal.image || item.image || "";
 
-    if (!image) return "https://placehold.co/200x200?text=Meal";
-
-    image = image.replace(/\\/g, "/");
-
-    if (!image.startsWith("http")) {
-      image = `http://localhost:4000/${image}`;
+    if (!image) {
+      return "https://placehold.co/200x200?text=Meal";
     }
 
-    return image;
+    image = String(image).replace(/\\/g, "/");
+
+    if (image.startsWith("http://") || image.startsWith("https://")) {
+      return image;
+    }
+
+    const backendUrl =
+      axiosInstance.defaults.baseURL?.replace(/\/api\/?$/, "") ||
+      window.location.origin;
+
+    return `${backendUrl}/${image.replace(/^\/+/, "")}`;
   };
 
   // =====================================
@@ -143,6 +168,7 @@ const Checkout = () => {
 
   const kitchenIds = useMemo(() => {
     const ids = cartItems.map((item) => getKitchenId(item)).filter(Boolean);
+
     return [...new Set(ids)];
   }, [cartItems]);
 
@@ -163,7 +189,9 @@ const Checkout = () => {
   const validate = () => {
     const nextErrors = {};
 
-    if (!address.fullName.trim()) nextErrors.fullName = "Name is required";
+    if (!address.fullName.trim()) {
+      nextErrors.fullName = "Name is required";
+    }
 
     if (!/^[6-9]\d{9}$/.test(address.phone.trim())) {
       nextErrors.phone = "Enter a valid 10-digit phone number";
@@ -184,10 +212,6 @@ const Checkout = () => {
 
   // =====================================
   // PRICE CALCULATIONS
-  // NOTE: these are for on-screen display only.
-  // The backend recalculates subtotal/tax/total
-  // from the DB meal prices and ignores anything
-  // sent from here — this is purely UX.
   // =====================================
 
   const subtotal = useMemo(() => {
@@ -220,6 +244,7 @@ const Checkout = () => {
       toast.error(
         "Your cart has meals from multiple kitchens. Please order from one kitchen at a time.",
       );
+
       return;
     }
 
@@ -231,15 +256,14 @@ const Checkout = () => {
     try {
       setPlacingOrder(true);
 
-      // Backend derives kitchenId from the meals themselves and
-      // recalculates price/subtotal/tax/total from the DB, so we
-      // only need to send mealId + quantity + the address/payment info.
       const payload = {
         items: cartItems.map((item) => ({
           mealId: getMealId(item),
           quantity: item.quantity || 1,
         })),
+
         deliveryAddress: address,
+
         paymentMethod,
       };
 
@@ -249,6 +273,7 @@ const Checkout = () => {
         toast.success("Order placed successfully");
 
         setCartCount?.(0);
+
         refreshCart?.();
 
         const orderId = res.data.data?._id;
@@ -279,12 +304,14 @@ const Checkout = () => {
           <div className="checkout-container">
             <div className="checkout-top">
               <div className="skeleton skeleton-back" />
+
               <div className="skeleton skeleton-title" />
             </div>
 
             <div className="checkout-layout">
               <div className="checkout-form-col">
                 <div className="skeleton skeleton-section" />
+
                 <div className="skeleton skeleton-section" />
               </div>
 
@@ -316,11 +343,17 @@ const Checkout = () => {
             className="checkout-empty-box"
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              duration: 0.5,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             <FaShoppingBag className="checkout-empty-icon" />
+
             <h1>Nothing to Checkout</h1>
+
             <p>Add some meals to your cart before checking out.</p>
+
             <Link to="/meal/all">
               <button className="shop-btn">Browse Meals</button>
             </Link>
@@ -354,6 +387,7 @@ const Checkout = () => {
 
             <div className="checkout-heading">
               <h1>Checkout</h1>
+
               <span className="checkout-subheading">
                 {totalQty} {totalQty === 1 ? "item" : "items"} · secure order
                 for delivery in Lucknow
@@ -372,6 +406,7 @@ const Checkout = () => {
           <div className="checkout-layout">
             <div className="checkout-form-col">
               {/* ===== STEP 1: DELIVERY ADDRESS ===== */}
+
               <motion.section
                 className="checkout-section"
                 initial={{ opacity: 0, y: 30 }}
@@ -380,13 +415,16 @@ const Checkout = () => {
               >
                 <div className="section-head">
                   <span className="step-eyebrow">01</span>
+
                   <FaMapMarkerAlt />
+
                   <h2>Delivery Address</h2>
                 </div>
 
                 <div className="form-grid">
                   <div className="form-field">
                     <label>Full Name</label>
+
                     <input
                       type="text"
                       placeholder="Your name"
@@ -396,6 +434,7 @@ const Checkout = () => {
                       }
                       className={errors.fullName ? "has-error" : ""}
                     />
+
                     {errors.fullName && (
                       <span className="field-error">{errors.fullName}</span>
                     )}
@@ -403,6 +442,7 @@ const Checkout = () => {
 
                   <div className="form-field">
                     <label>Phone Number</label>
+
                     <input
                       type="tel"
                       placeholder="10-digit mobile number"
@@ -416,6 +456,7 @@ const Checkout = () => {
                       }
                       className={errors.phone ? "has-error" : ""}
                     />
+
                     {errors.phone && (
                       <span className="field-error">{errors.phone}</span>
                     )}
@@ -423,6 +464,7 @@ const Checkout = () => {
 
                   <div className="form-field span-2">
                     <label>Address</label>
+
                     <input
                       type="text"
                       placeholder="House no, street, area"
@@ -432,6 +474,7 @@ const Checkout = () => {
                       }
                       className={errors.addressLine ? "has-error" : ""}
                     />
+
                     {errors.addressLine && (
                       <span className="field-error">{errors.addressLine}</span>
                     )}
@@ -439,6 +482,7 @@ const Checkout = () => {
 
                   <div className="form-field">
                     <label>Landmark (optional)</label>
+
                     <input
                       type="text"
                       placeholder="Nearby landmark"
@@ -451,6 +495,7 @@ const Checkout = () => {
 
                   <div className="form-field">
                     <label>City</label>
+
                     <input
                       type="text"
                       value={address.city}
@@ -462,6 +507,7 @@ const Checkout = () => {
 
                   <div className="form-field">
                     <label>Pincode</label>
+
                     <input
                       type="text"
                       placeholder="6-digit pincode"
@@ -475,6 +521,7 @@ const Checkout = () => {
                       }
                       className={errors.pincode ? "has-error" : ""}
                     />
+
                     {errors.pincode && (
                       <span className="field-error">{errors.pincode}</span>
                     )}
@@ -483,15 +530,21 @@ const Checkout = () => {
               </motion.section>
 
               {/* ===== STEP 2: PAYMENT METHOD ===== */}
+
               <motion.section
                 className="checkout-section"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.1,
+                }}
               >
                 <div className="section-head">
                   <span className="step-eyebrow">02</span>
+
                   <FaCreditCard />
+
                   <h2>Payment Method</h2>
                 </div>
 
@@ -506,10 +559,13 @@ const Checkout = () => {
                     <div className="payment-icon">
                       <FaMoneyBillWave />
                     </div>
+
                     <div className="payment-text">
                       <h3>Cash on Delivery</h3>
+
                       <p>Pay when your meal arrives</p>
                     </div>
+
                     <span className="radio-dot" />
                   </button>
 
@@ -523,43 +579,59 @@ const Checkout = () => {
                     <div className="payment-icon">
                       <FaCreditCard />
                     </div>
+
                     <div className="payment-text">
                       <h3>Online Payment</h3>
+
                       <p>UPI, Card or Netbanking</p>
                     </div>
+
                     <span className="radio-dot" />
                   </button>
                 </div>
               </motion.section>
 
               {/* ===== STEP 3: REVIEW ITEMS ===== */}
+
               <motion.section
                 className="checkout-section"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.2,
+                }}
               >
                 <div className="section-head">
                   <span className="step-eyebrow">03</span>
+
                   <FaReceipt />
+
                   <h2>Review Order</h2>
                 </div>
 
                 <div className="review-list">
                   {cartItems.map((item, index) => {
                     const mealId = getMealId(item);
+
                     const title = getTitle(item);
+
                     const image = getImage(item);
+
                     const price = getPrice(item);
+
                     const qty = item.quantity || 1;
 
                     return (
                       <div className="review-row" key={mealId || index}>
                         <img src={image} alt={title} />
+
                         <div className="review-info">
                           <h4>{title}</h4>
+
                           <span>Qty {qty}</span>
                         </div>
+
                         <strong>₹{(price * qty).toFixed(0)}</strong>
                       </div>
                     );
@@ -574,7 +646,10 @@ const Checkout = () => {
               className="checkout-summary"
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <div className="ticket-stamp">
                 <span>Lucknow</span>
@@ -583,11 +658,13 @@ const Checkout = () => {
 
               <div className="ticket-head">
                 <FaReceipt />
+
                 <h2>Payment Summary</h2>
               </div>
 
               <div className="summary-row">
                 <span>Items ({totalQty})</span>
+
                 <strong>₹{subtotal.toFixed(2)}</strong>
               </div>
 
@@ -595,11 +672,13 @@ const Checkout = () => {
                 <span>
                   <FaTruck className="row-icon" /> Delivery Fee
                 </span>
+
                 <strong>₹{deliveryFee.toFixed(2)}</strong>
               </div>
 
               <div className="summary-row">
                 <span>GST (5%)</span>
+
                 <strong>₹{tax.toFixed(2)}</strong>
               </div>
 
@@ -607,11 +686,13 @@ const Checkout = () => {
 
               <div className="total-row">
                 <span>Grand Total</span>
+
                 <h2>₹{grandTotal.toFixed(2)}</h2>
               </div>
 
               <div className="selected-payment-note">
                 <FaCheckCircle />
+
                 <span>
                   Paying via{" "}
                   {paymentMethod === "COD"
@@ -639,10 +720,13 @@ const Checkout = () => {
               <div className="checkout-features">
                 <div className="feature-item">
                   <FaShieldAlt />
+
                   <span>100% Secure Checkout</span>
                 </div>
+
                 <div className="feature-item">
                   <FaTruck />
+
                   <span>Estimated delivery in 40–50 mins</span>
                 </div>
               </div>

@@ -76,12 +76,17 @@ const mealTypes = [
 ];
 
 // =========================================================
+// IMAGE FALLBACK
+// =========================================================
+
+const FALLBACK_IMAGE = "https://placehold.co/800x600?text=Meal";
+
+// =========================================================
 // COMPONENT
 // =========================================================
 
 const ProviderMeal = () => {
   const [meals, setMeals] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -102,18 +107,39 @@ const ProviderMeal = () => {
   // =========================================================
 
   const getImageUrl = (image) => {
-    if (!image) return "";
+    if (!image) return FALLBACK_IMAGE;
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
+    // Already a complete URL
+    if (image.startsWith("http://") || image.startsWith("https://")) {
       return image;
     }
 
-    const normalized = image.replace(/\\/g, "/");
+    // Normalize Windows path
+    const normalized = String(image).replace(/\\/g, "/");
 
-    return `http://localhost:4000/${normalized}`;
+    // Remove accidental leading slash
+    const cleanPath = normalized.replace(/^\/+/, "");
+
+    /*
+      axiosInstance should already point to the deployed backend.
+
+      Example:
+      VITE_API_URL=https://your-backend.onrender.com/api
+
+      We remove /api because uploaded images are normally served
+      from the backend root/static route.
+    */
+
+    const apiBase =
+      axiosInstance?.defaults?.baseURL || import.meta.env.VITE_API_URL || "";
+
+    const backendBase = apiBase.replace(/\/api\/?$/, "").replace(/\/+$/, "");
+
+    if (!backendBase) {
+      return `/${cleanPath}`;
+    }
+
+    return `${backendBase}/${cleanPath}`;
   };
 
   // =========================================================
@@ -138,21 +164,16 @@ const ProviderMeal = () => {
 
       if (res.data?.success) {
         setMeals(
-          Array.isArray(res.data.data)
-            ? res.data.data.filter(Boolean)
-            : [],
+          Array.isArray(res.data.data) ? res.data.data.filter(Boolean) : [],
         );
       } else {
-        toast.error(
-          res.data?.message || "Unable to fetch your meals.",
-        );
+        toast.error(res.data?.message || "Unable to fetch your meals.");
       }
     } catch (error) {
       console.error("Fetch meals error:", error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Failed to load your meals.",
+        error.response?.data?.message || "Failed to load your meals.",
       );
     } finally {
       setLoading(false);
@@ -181,6 +202,10 @@ const ProviderMeal = () => {
   // =========================================================
 
   const resetForm = () => {
+    if (imagePreview && imagePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
     setFormData(initialForm);
     setEditingMeal(null);
     setImageFile(null);
@@ -257,9 +282,14 @@ const ProviderMeal = () => {
       return;
     }
 
+    if (imagePreview && imagePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
     setImageFile(file);
 
     const previewUrl = URL.createObjectURL(file);
+
     setImagePreview(previewUrl);
   };
 
@@ -268,19 +298,16 @@ const ProviderMeal = () => {
   // =========================================================
 
   const validateForm = () => {
-    // Title
     if (!formData.title.trim()) {
       toast.error("Please enter meal name.");
       return false;
     }
 
-    // Description
     if (!formData.description.trim()) {
       toast.error("Please enter meal description.");
       return false;
     }
 
-    // Price
     if (
       formData.price === "" ||
       Number.isNaN(Number(formData.price)) ||
@@ -290,25 +317,21 @@ const ProviderMeal = () => {
       return false;
     }
 
-    // Category
     if (!formData.category) {
       toast.error("Please select a category.");
       return false;
     }
 
-    // Meal Type
     if (!formData.mealType) {
       toast.error("Please select meal type.");
       return false;
     }
 
-    // Veg / Non-Veg
     if (!formData.vegOrNonVeg) {
       toast.error("Please select veg or non-veg.");
       return false;
     }
 
-    // Quantity
     if (
       formData.quantityAvailable === "" ||
       Number.isNaN(Number(formData.quantityAvailable)) ||
@@ -318,8 +341,6 @@ const ProviderMeal = () => {
       return false;
     }
 
-    // Image is required only while creating.
-    // During edit, existing image can remain.
     if (!editingMeal && !imageFile) {
       toast.error("Please upload a meal image.");
       return false;
@@ -342,46 +363,22 @@ const ProviderMeal = () => {
 
       const payload = new FormData();
 
-      // Required fields
       payload.append("title", formData.title.trim());
 
-      payload.append(
-        "description",
-        formData.description.trim(),
-      );
+      payload.append("description", formData.description.trim());
 
-      payload.append(
-        "price",
-        Number(formData.price),
-      );
+      payload.append("price", Number(formData.price));
 
-      payload.append(
-        "category",
-        formData.category,
-      );
+      payload.append("category", formData.category);
 
-      payload.append(
-        "mealType",
-        formData.mealType,
-      );
+      payload.append("mealType", formData.mealType);
 
-      payload.append(
-        "vegOrNonVeg",
-        formData.vegOrNonVeg,
-      );
+      payload.append("vegOrNonVeg", formData.vegOrNonVeg);
 
-      payload.append(
-        "quantityAvailable",
-        Number(formData.quantityAvailable),
-      );
+      payload.append("quantityAvailable", Number(formData.quantityAvailable));
 
-      // Availability
-      payload.append(
-        "isAvailable",
-        formData.isAvailable ? "true" : "false",
-      );
+      payload.append("isAvailable", formData.isAvailable ? "true" : "false");
 
-      // Image
       if (imageFile) {
         payload.append("image", imageFile);
       }
@@ -404,10 +401,7 @@ const ProviderMeal = () => {
         );
 
         if (!res.data?.success) {
-          throw new Error(
-            res.data?.message ||
-              "Unable to update meal.",
-          );
+          throw new Error(res.data?.message || "Unable to update meal.");
         }
 
         toast.success("Meal updated successfully.");
@@ -416,43 +410,29 @@ const ProviderMeal = () => {
       // =====================================================
       // CREATE
       // =====================================================
-
       else {
-        res = await axiosInstance.post(
-          "/meal/add-meal",
-          payload,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
+        res = await axiosInstance.post("/meal/add-meal", payload, {
+          headers: {
+            "Content-Type": "multipart/form-data",
           },
-        );
+        });
 
         if (!res.data?.success) {
-          throw new Error(
-            res.data?.message ||
-              "Unable to create meal.",
-          );
+          throw new Error(res.data?.message || "Unable to create meal.");
         }
 
         toast.success("Meal added successfully.");
       }
 
-      // Close modal
       setShowModal(false);
 
-      // Reset form
       resetForm();
 
-      // Refresh meals
       await fetchMeals();
     } catch (error) {
       console.error("Meal save error:", error);
 
-      console.error(
-        "Backend response:",
-        error.response?.data,
-      );
+      console.error("Backend response:", error.response?.data);
 
       toast.error(
         error.response?.data?.message ||
@@ -479,24 +459,15 @@ const ProviderMeal = () => {
     if (!confirmed) return;
 
     try {
-      const res = await axiosInstance.delete(
-        `/meal/delete-meal/${mealId}`,
-      );
+      const res = await axiosInstance.delete(`/meal/delete-meal/${mealId}`);
 
       if (!res.data?.success) {
-        throw new Error(
-          res.data?.message ||
-            "Unable to delete meal.",
-        );
+        throw new Error(res.data?.message || "Unable to delete meal.");
       }
 
       toast.success("Meal deleted successfully.");
 
-      setMeals((prev) =>
-        prev.filter(
-          (meal) => meal?._id !== mealId,
-        ),
-      );
+      setMeals((prev) => prev.filter((meal) => meal?._id !== mealId));
     } catch (error) {
       console.error("Delete meal error:", error);
 
@@ -520,9 +491,7 @@ const ProviderMeal = () => {
       const description = meal.description || "";
       const category = meal.category || "";
 
-      const search = searchTerm
-        .toLowerCase()
-        .trim();
+      const search = searchTerm.toLowerCase().trim();
 
       const matchesSearch =
         title.toLowerCase().includes(search) ||
@@ -530,48 +499,31 @@ const ProviderMeal = () => {
 
       const matchesCategory =
         categoryFilter === "all" ||
-        category.toLowerCase() ===
-          categoryFilter.toLowerCase();
+        category.toLowerCase() === categoryFilter.toLowerCase();
 
-      const isAvailable =
-        getMealAvailability(meal);
+      const isAvailable = getMealAvailability(meal);
 
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "active" &&
-          isAvailable) ||
-        (statusFilter === "inactive" &&
-          !isAvailable);
+        (statusFilter === "active" && isAvailable) ||
+        (statusFilter === "inactive" && !isAvailable);
 
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesStatus
-      );
+      return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [
-    meals,
-    searchTerm,
-    categoryFilter,
-    statusFilter,
-  ]);
+  }, [meals, searchTerm, categoryFilter, statusFilter]);
 
   // =========================================================
   // STATS
   // =========================================================
 
-  const activeMeals = meals.filter((meal) =>
-    getMealAvailability(meal),
-  ).length;
+  const activeMeals = meals.filter((meal) => getMealAvailability(meal)).length;
 
   const inactiveMeals = meals.filter(
-    (meal) =>
-      meal && !getMealAvailability(meal),
+    (meal) => meal && !getMealAvailability(meal),
   ).length;
 
   const totalValue = meals.reduce(
-    (sum, meal) =>
-      sum + Number(meal?.price || 0),
+    (sum, meal) => sum + Number(meal?.price || 0),
     0,
   );
 
@@ -583,24 +535,18 @@ const ProviderMeal = () => {
     return (
       <div className="provider-meals-page">
         <div className="provider-meals-container">
-
           <div className="meal-loading-header">
             <div className="meal-shimmer meal-shimmer-title" />
-
             <div className="meal-shimmer meal-shimmer-description" />
           </div>
 
           <div className="meal-loading-stats">
             {[1, 2, 3, 4].map((item) => (
-              <div
-                className="meal-stat-skeleton"
-                key={item}
-              >
+              <div className="meal-stat-skeleton" key={item}>
                 <div className="meal-shimmer meal-shimmer-icon" />
 
                 <div>
                   <div className="meal-shimmer meal-shimmer-small" />
-
                   <div className="meal-shimmer meal-shimmer-number" />
                 </div>
               </div>
@@ -608,24 +554,17 @@ const ProviderMeal = () => {
           </div>
 
           <div className="meal-loading-grid">
-            {[1, 2, 3, 4, 5, 6].map(
-              (item) => (
-                <div
-                  className="meal-card-skeleton"
-                  key={item}
-                >
-                  <div className="meal-shimmer meal-shimmer-image" />
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <div className="meal-card-skeleton" key={item}>
+                <div className="meal-shimmer meal-shimmer-image" />
 
-                  <div className="meal-skeleton-content">
-                    <div className="meal-shimmer meal-shimmer-line" />
-
-                    <div className="meal-shimmer meal-shimmer-line short" />
-
-                    <div className="meal-shimmer meal-shimmer-line shorter" />
-                  </div>
+                <div className="meal-skeleton-content">
+                  <div className="meal-shimmer meal-shimmer-line" />
+                  <div className="meal-shimmer meal-shimmer-line short" />
+                  <div className="meal-shimmer meal-shimmer-line shorter" />
                 </div>
-              ),
-            )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -639,10 +578,7 @@ const ProviderMeal = () => {
   return (
     <div className="provider-meals-page">
       <div className="provider-meals-container">
-
-        {/* =====================================================
-            HEADER
-        ====================================================== */}
+        {/* HEADER */}
 
         <motion.section
           className="provider-meals-header"
@@ -659,7 +595,6 @@ const ProviderMeal = () => {
           }}
         >
           <div className="provider-meals-heading">
-
             <div className="meals-eyebrow">
               <FiLayers />
               <span>PROVIDER WORKSPACE</span>
@@ -670,8 +605,7 @@ const ProviderMeal = () => {
             </h1>
 
             <p>
-              Create, update and manage the meals
-              available from your kitchen.
+              Create, update and manage the meals available from your kitchen.
             </p>
           </div>
 
@@ -692,9 +626,7 @@ const ProviderMeal = () => {
           </motion.button>
         </motion.section>
 
-        {/* =====================================================
-            STATS
-        ====================================================== */}
+        {/* STATS */}
 
         <motion.section
           className="provider-meal-stats"
@@ -709,9 +641,6 @@ const ProviderMeal = () => {
             },
           }}
         >
-
-          {/* TOTAL */}
-
           <motion.div
             className="meal-stat-card"
             variants={{
@@ -732,14 +661,9 @@ const ProviderMeal = () => {
 
             <div>
               <span>Total Meals</span>
-
-              <strong>
-                {meals.length}
-              </strong>
+              <strong>{meals.length}</strong>
             </div>
           </motion.div>
-
-          {/* AVAILABLE */}
 
           <motion.div
             className="meal-stat-card"
@@ -761,14 +685,9 @@ const ProviderMeal = () => {
 
             <div>
               <span>Available</span>
-
-              <strong>
-                {activeMeals}
-              </strong>
+              <strong>{activeMeals}</strong>
             </div>
           </motion.div>
-
-          {/* UNAVAILABLE */}
 
           <motion.div
             className="meal-stat-card"
@@ -790,14 +709,9 @@ const ProviderMeal = () => {
 
             <div>
               <span>Unavailable</span>
-
-              <strong>
-                {inactiveMeals}
-              </strong>
+              <strong>{inactiveMeals}</strong>
             </div>
           </motion.div>
-
-          {/* VALUE */}
 
           <motion.div
             className="meal-stat-card"
@@ -820,19 +734,12 @@ const ProviderMeal = () => {
             <div>
               <span>Menu Value</span>
 
-              <strong>
-                ₹
-                {totalValue.toLocaleString(
-                  "en-IN",
-                )}
-              </strong>
+              <strong>₹{totalValue.toLocaleString("en-IN")}</strong>
             </div>
           </motion.div>
         </motion.section>
 
-        {/* =====================================================
-            FILTER BAR
-        ====================================================== */}
+        {/* FILTER BAR */}
 
         <motion.section
           className="meals-toolbar"
@@ -855,18 +762,14 @@ const ProviderMeal = () => {
               type="text"
               placeholder="Search meals..."
               value={searchTerm}
-              onChange={(e) =>
-                setSearchTerm(e.target.value)
-              }
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
 
             {searchTerm && (
               <button
                 type="button"
                 className="clear-search-btn"
-                onClick={() =>
-                  setSearchTerm("")
-                }
+                onClick={() => setSearchTerm("")}
               >
                 <FiX />
               </button>
@@ -874,7 +777,6 @@ const ProviderMeal = () => {
           </div>
 
           <div className="meal-filter-group">
-
             {/* CATEGORY */}
 
             <div className="meal-filter">
@@ -882,58 +784,32 @@ const ProviderMeal = () => {
 
               <select
                 value={categoryFilter}
-                onChange={(e) =>
-                  setCategoryFilter(
-                    e.target.value,
-                  )
-                }
+                onChange={(e) => setCategoryFilter(e.target.value)}
               >
-                <option value="all">
-                  All Categories
-                </option>
+                <option value="all">All Categories</option>
 
-                {categories.map(
-                  (category) => (
-                    <option
-                      value={category}
-                      key={category}
-                    >
-                      {category}
-                    </option>
-                  ),
-                )}
+                {categories.map((category) => (
+                  <option value={category} key={category}>
+                    {category}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* STATUS */}
 
             <div className="meal-filter">
-              {statusFilter ===
-              "inactive" ? (
-                <FiEyeOff />
-              ) : (
-                <FiEye />
-              )}
+              {statusFilter === "inactive" ? <FiEyeOff /> : <FiEye />}
 
               <select
                 value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(
-                    e.target.value,
-                  )
-                }
+                onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <option value="all">
-                  All Status
-                </option>
+                <option value="all">All Status</option>
 
-                <option value="active">
-                  Available
-                </option>
+                <option value="active">Available</option>
 
-                <option value="inactive">
-                  Unavailable
-                </option>
+                <option value="inactive">Unavailable</option>
               </select>
             </div>
 
@@ -956,9 +832,7 @@ const ProviderMeal = () => {
           </div>
         </motion.section>
 
-        {/* =====================================================
-            SECTION HEADER
-        ====================================================== */}
+        {/* SECTION HEADER */}
 
         <div className="meals-section-heading">
           <div>
@@ -967,22 +841,13 @@ const ProviderMeal = () => {
             <h2>Kitchen meals</h2>
 
             <p>
-              Showing{" "}
-              <strong>
-                {filteredMeals.length}
-              </strong>{" "}
-              of{" "}
-              <strong>
-                {meals.length}
-              </strong>{" "}
-              meals
+              Showing <strong>{filteredMeals.length}</strong> of{" "}
+              <strong>{meals.length}</strong> meals
             </p>
           </div>
         </div>
 
-        {/* =====================================================
-            EMPTY STATE
-        ====================================================== */}
+        {/* EMPTY STATE */}
 
         {filteredMeals.length === 0 ? (
           <motion.div
@@ -997,18 +862,10 @@ const ProviderMeal = () => {
             }}
           >
             <div className="empty-meal-icon">
-              {meals.length === 0 ? (
-                <FiPackage />
-              ) : (
-                <FiSearch />
-              )}
+              {meals.length === 0 ? <FiPackage /> : <FiSearch />}
             </div>
 
-            <h3>
-              {meals.length === 0
-                ? "No meals yet"
-                : "No meals found"}
-            </h3>
+            <h3>{meals.length === 0 ? "No meals yet" : "No meals found"}</h3>
 
             <p>
               {meals.length === 0
@@ -1017,10 +874,7 @@ const ProviderMeal = () => {
             </p>
 
             {meals.length === 0 && (
-              <button
-                type="button"
-                onClick={openCreateModal}
-              >
+              <button type="button" onClick={openCreateModal}>
                 <FiPlus />
                 Add Your First Meal
               </button>
@@ -1041,10 +895,7 @@ const ProviderMeal = () => {
             )}
           </motion.div>
         ) : (
-
-          /* =====================================================
-             MEAL GRID
-          ====================================================== */
+          /* MEAL GRID */
 
           <motion.div
             className="provider-meals-grid"
@@ -1062,23 +913,18 @@ const ProviderMeal = () => {
             {filteredMeals.map((meal) => {
               if (!meal) return null;
 
-              const mealTitle =
-                meal.title ||
-                "Untitled Meal";
+              const mealTitle = meal.title || "Untitled Meal";
 
               const mealImage = meal.image
                 ? getImageUrl(meal.image)
-                : "";
+                : FALLBACK_IMAGE;
 
-              const isAvailable =
-                getMealAvailability(meal);
+              const isAvailable = getMealAvailability(meal);
 
               return (
                 <motion.article
                   className={`provider-meal-card ${
-                    !isAvailable
-                      ? "meal-unavailable"
-                      : ""
+                    !isAvailable ? "meal-unavailable" : ""
                   }`}
                   key={meal._id}
                   variants={{
@@ -1098,69 +944,44 @@ const ProviderMeal = () => {
                     },
                   }}
                 >
-
                   {/* IMAGE */}
 
                   <div className="provider-meal-image">
-
-                    {mealImage ? (
-                      <img
-                        src={mealImage}
-                        alt={mealTitle}
-                      />
-                    ) : (
-                      <div className="meal-no-image">
-                        <FiImage />
-
-                        <span>
-                          No Image
-                        </span>
-                      </div>
-                    )}
+                    <img
+                      src={mealImage}
+                      alt={mealTitle}
+                      onError={(e) => {
+                        if (e.currentTarget.src !== FALLBACK_IMAGE) {
+                          e.currentTarget.src = FALLBACK_IMAGE;
+                        }
+                      }}
+                    />
 
                     <div className="meal-image-overlay" />
 
                     <span className="meal-category-badge">
-                      {meal.category ||
-                        "Meal"}
+                      {meal.category || "Meal"}
                     </span>
 
                     <span
                       className={`meal-availability ${
-                        isAvailable
-                          ? "available"
-                          : "unavailable"
+                        isAvailable ? "available" : "unavailable"
                       }`}
                     >
-                      {isAvailable ? (
-                        <FiCheckCircle />
-                      ) : (
-                        <FiEyeOff />
-                      )}
+                      {isAvailable ? <FiCheckCircle /> : <FiEyeOff />}
 
-                      {isAvailable
-                        ? "Available"
-                        : "Unavailable"}
+                      {isAvailable ? "Available" : "Unavailable"}
                     </span>
                   </div>
 
                   {/* CONTENT */}
 
                   <div className="provider-meal-content">
-
                     <div className="provider-meal-title-row">
-
-                      <h3>
-                        {mealTitle}
-                      </h3>
+                      <h3>{mealTitle}</h3>
 
                       <div className="meal-price">
-                        ₹
-                        {Number(
-                          meal.price || 0,
-                        ).toLocaleString(
-                          "en-IN",
-                        )}
+                        ₹{Number(meal.price || 0).toLocaleString("en-IN")}
                       </div>
                     </div>
 
@@ -1172,23 +993,17 @@ const ProviderMeal = () => {
                     {/* META */}
 
                     <div className="meal-card-meta">
-
                       <span>
                         <FiClock />
 
                         {meal.mealType
-                          ? meal.mealType
-                              .charAt(0)
-                              .toUpperCase() +
-                            meal.mealType.slice(
-                              1,
-                            )
+                          ? meal.mealType.charAt(0).toUpperCase() +
+                            meal.mealType.slice(1)
                           : "Meal"}
                       </span>
 
                       <span>
-                        {meal.vegOrNonVeg ===
-                        "veg" ? (
+                        {meal.vegOrNonVeg === "veg" ? (
                           <>
                             <FiCheckCircle />
                             Veg
@@ -1200,35 +1015,21 @@ const ProviderMeal = () => {
                           </>
                         )}
                       </span>
-
                     </div>
 
                     {/* QUANTITY */}
 
                     <div className="meal-card-meta">
-
                       <span>
                         <FiPackage />
-
-                        {Number(
-                          meal.quantityAvailable ||
-                            0,
-                        )}{" "}
-                        available
+                        {Number(meal.quantityAvailable || 0)} available
                       </span>
 
                       <span>
-                        {isAvailable ? (
-                          <FiCheckCircle />
-                        ) : (
-                          <FiEyeOff />
-                        )}
+                        {isAvailable ? <FiCheckCircle /> : <FiEyeOff />}
 
-                        {isAvailable
-                          ? "Orderable"
-                          : "Hidden"}
+                        {isAvailable ? "Orderable" : "Hidden"}
                       </span>
-
                     </div>
 
                     <div className="meal-card-divider" />
@@ -1236,13 +1037,10 @@ const ProviderMeal = () => {
                     {/* ACTIONS */}
 
                     <div className="provider-meal-actions">
-
                       <button
                         type="button"
                         className="meal-edit-btn"
-                        onClick={() =>
-                          openEditModal(meal)
-                        }
+                        onClick={() => openEditModal(meal)}
                       >
                         <FiEdit3 />
                         Edit
@@ -1251,16 +1049,11 @@ const ProviderMeal = () => {
                       <button
                         type="button"
                         className="meal-delete-btn"
-                        onClick={() =>
-                          handleDelete(
-                            meal._id,
-                          )
-                        }
+                        onClick={() => handleDelete(meal._id)}
                         title="Delete meal"
                       >
                         <FiTrash2 />
                       </button>
-
                     </div>
                   </div>
                 </motion.article>
@@ -1269,9 +1062,7 @@ const ProviderMeal = () => {
           </motion.div>
         )}
 
-        {/* =====================================================
-            MODAL
-        ====================================================== */}
+        {/* MODAL */}
 
         <AnimatePresence>
           {showModal && (
@@ -1287,10 +1078,7 @@ const ProviderMeal = () => {
                 opacity: 0,
               }}
               onMouseDown={(e) => {
-                if (
-                  e.target ===
-                  e.currentTarget
-                ) {
+                if (e.target === e.currentTarget) {
                   closeModal();
                 }
               }}
@@ -1316,25 +1104,13 @@ const ProviderMeal = () => {
                   duration: 0.25,
                 }}
               >
-
-                {/* =================================================
-                    MODAL HEADER
-                ================================================== */}
+                {/* MODAL HEADER */}
 
                 <div className="meal-modal-header">
-
                   <div>
-                    <span>
-                      {editingMeal
-                        ? "UPDATE MEAL"
-                        : "NEW MENU ITEM"}
-                    </span>
+                    <span>{editingMeal ? "UPDATE MEAL" : "NEW MENU ITEM"}</span>
 
-                    <h2>
-                      {editingMeal
-                        ? "Edit your meal"
-                        : "Add a new meal"}
-                    </h2>
+                    <h2>{editingMeal ? "Edit your meal" : "Add a new meal"}</h2>
                   </div>
 
                   <button
@@ -1347,109 +1123,77 @@ const ProviderMeal = () => {
                   </button>
                 </div>
 
-                {/* =================================================
-                    FORM
-                ================================================== */}
+                {/* FORM */}
 
-                <form
-                  className="meal-form"
-                  onSubmit={handleSubmit}
-                >
-
-                  {/* =================================================
-                      IMAGE
-                  ================================================== */}
+                <form className="meal-form" onSubmit={handleSubmit}>
+                  {/* IMAGE */}
 
                   <div className="meal-image-upload">
-
                     <div className="upload-preview">
-
                       {imagePreview ? (
                         <img
                           src={imagePreview}
                           alt="Meal preview"
+                          onError={(e) => {
+                            e.currentTarget.src = FALLBACK_IMAGE;
+                          }}
                         />
                       ) : (
                         <div>
                           <FiUploadCloud />
 
-                          <span>
-                            Upload meal image
-                          </span>
+                          <span>Upload meal image</span>
                         </div>
                       )}
-
                     </div>
 
                     <label className="upload-btn">
                       <FiImage />
 
-                      {imagePreview
-                        ? "Change Image"
-                        : "Choose Image"}
+                      {imagePreview ? "Change Image" : "Choose Image"}
 
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={
-                          handleImageChange
-                        }
+                        onChange={handleImageChange}
                       />
                     </label>
 
                     <small>
-                      JPG, PNG or WEBP • Maximum
-                      5MB
-                      {!editingMeal &&
-                        " • Required"}
+                      JPG, PNG or WEBP • Maximum 5MB
+                      {!editingMeal && " • Required"}
                     </small>
                   </div>
 
-                  {/* =================================================
-                      TITLE
-                  ================================================== */}
+                  {/* TITLE */}
 
                   <div className="form-group">
-
                     <label>
-                      Meal Name{" "}
-                      <span>*</span>
+                      Meal Name <span>*</span>
                     </label>
 
                     <input
                       type="text"
                       name="title"
-                      value={
-                        formData.title
-                      }
-                      onChange={
-                        handleChange
-                      }
+                      value={formData.title}
+                      onChange={handleChange}
                       placeholder="e.g. Paneer Butter Masala"
                       maxLength={100}
                       required
                     />
                   </div>
 
-                  {/* =================================================
-                      DESCRIPTION
-                  ================================================== */}
+                  {/* DESCRIPTION */}
 
                   <div className="form-group">
-
                     <label>
-                      Description{" "}
-                      <span>*</span>
+                      Description <span>*</span>
                     </label>
 
                     <textarea
                       name="description"
-                      value={
-                        formData.description
-                      }
-                      onChange={
-                        handleChange
-                      }
+                      value={formData.description}
+                      onChange={handleChange}
                       placeholder="Describe ingredients, taste and what customers will receive..."
                       rows="4"
                       maxLength={500}
@@ -1457,19 +1201,12 @@ const ProviderMeal = () => {
                     />
                   </div>
 
-                  {/* =================================================
-                      PRICE + CATEGORY
-                  ================================================== */}
+                  {/* PRICE + CATEGORY */}
 
                   <div className="form-row">
-
-                    {/* PRICE */}
-
                     <div className="form-group">
-
                       <label>
-                        Price{" "}
-                        <span>*</span>
+                        Price <span>*</span>
                       </label>
 
                       <div className="input-prefix">
@@ -1478,12 +1215,8 @@ const ProviderMeal = () => {
                         <input
                           type="number"
                           name="price"
-                          value={
-                            formData.price
-                          }
-                          onChange={
-                            handleChange
-                          }
+                          value={formData.price}
+                          onChange={handleChange}
                           placeholder="199"
                           min="1"
                           step="1"
@@ -1492,132 +1225,77 @@ const ProviderMeal = () => {
                       </div>
                     </div>
 
-                    {/* CATEGORY */}
-
                     <div className="form-group">
-
                       <label>
-                        Category{" "}
-                        <span>*</span>
+                        Category <span>*</span>
                       </label>
 
                       <select
                         name="category"
-                        value={
-                          formData.category
-                        }
-                        onChange={
-                          handleChange
-                        }
+                        value={formData.category}
+                        onChange={handleChange}
                         required
                       >
-                        <option value="">
-                          Select category
-                        </option>
+                        <option value="">Select category</option>
 
-                        {categories.map(
-                          (category) => (
-                            <option
-                              value={category}
-                              key={category}
-                            >
-                              {category}
-                            </option>
-                          ),
-                        )}
+                        {categories.map((category) => (
+                          <option value={category} key={category}>
+                            {category}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
 
-                  {/* =================================================
-                      MEAL TYPE + FOOD TYPE
-                  ================================================== */}
+                  {/* MEAL TYPE + FOOD TYPE */}
 
                   <div className="form-row">
-
-                    {/* MEAL TYPE */}
-
                     <div className="form-group">
-
                       <label>
-                        Meal Type{" "}
-                        <span>*</span>
+                        Meal Type <span>*</span>
                       </label>
 
                       <select
                         name="mealType"
-                        value={
-                          formData.mealType
-                        }
-                        onChange={
-                          handleChange
-                        }
+                        value={formData.mealType}
+                        onChange={handleChange}
                         required
                       >
-                        <option value="">
-                          Select meal type
-                        </option>
+                        <option value="">Select meal type</option>
 
-                        {mealTypes.map(
-                          (type) => (
-                            <option
-                              value={
-                                type.value
-                              }
-                              key={
-                                type.value
-                              }
-                            >
-                              {type.label}
-                            </option>
-                          ),
-                        )}
+                        {mealTypes.map((type) => (
+                          <option value={type.value} key={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
-                    {/* VEG / NON VEG */}
-
                     <div className="form-group">
-
                       <label>
-                        Food Type{" "}
-                        <span>*</span>
+                        Food Type <span>*</span>
                       </label>
 
                       <select
                         name="vegOrNonVeg"
-                        value={
-                          formData.vegOrNonVeg
-                        }
-                        onChange={
-                          handleChange
-                        }
+                        value={formData.vegOrNonVeg}
+                        onChange={handleChange}
                         required
                       >
-                        <option value="">
-                          Select food type
-                        </option>
+                        <option value="">Select food type</option>
 
-                        <option value="veg">
-                          Veg
-                        </option>
+                        <option value="veg">Veg</option>
 
-                        <option value="non-veg">
-                          Non-Veg
-                        </option>
+                        <option value="non-veg">Non-Veg</option>
                       </select>
                     </div>
                   </div>
 
-                  {/* =================================================
-                      QUANTITY
-                  ================================================== */}
+                  {/* QUANTITY */}
 
                   <div className="form-group">
-
                     <label>
-                      Available Quantity{" "}
-                      <span>*</span>
+                      Available Quantity <span>*</span>
                     </label>
 
                     <div className="input-prefix">
@@ -1628,12 +1306,8 @@ const ProviderMeal = () => {
                       <input
                         type="number"
                         name="quantityAvailable"
-                        value={
-                          formData.quantityAvailable
-                        }
-                        onChange={
-                          handleChange
-                        }
+                        value={formData.quantityAvailable}
+                        onChange={handleChange}
                         placeholder="e.g. 20"
                         min="1"
                         step="1"
@@ -1641,22 +1315,14 @@ const ProviderMeal = () => {
                       />
                     </div>
 
-                    <small>
-                      Number of portions/items
-                      currently available.
-                    </small>
+                    <small>Number of portions/items currently available.</small>
                   </div>
 
-                  {/* =================================================
-                      AVAILABILITY
-                  ================================================== */}
+                  {/* AVAILABILITY */}
 
                   <label className="meal-availability-toggle">
-
                     <div>
-                      <strong>
-                        Meal availability
-                      </strong>
+                      <strong>Meal availability</strong>
 
                       <span>
                         {formData.isAvailable
@@ -1668,33 +1334,21 @@ const ProviderMeal = () => {
                     <input
                       type="checkbox"
                       name="isAvailable"
-                      checked={
-                        formData.isAvailable ===
-                        true
-                      }
-                      onChange={
-                        handleChange
-                      }
+                      checked={formData.isAvailable === true}
+                      onChange={handleChange}
                     />
 
                     <span className="custom-toggle" />
                   </label>
 
-                  {/* =================================================
-                      ACTIONS
-                  ================================================== */}
+                  {/* ACTIONS */}
 
                   <div className="meal-form-actions">
-
                     <button
                       type="button"
                       className="cancel-meal-btn"
-                      onClick={
-                        closeModal
-                      }
-                      disabled={
-                        submitting
-                      }
+                      onClick={closeModal}
+                      disabled={submitting}
                     >
                       Cancel
                     </button>
@@ -1702,27 +1356,18 @@ const ProviderMeal = () => {
                     <button
                       type="submit"
                       className="submit-meal-btn"
-                      disabled={
-                        submitting
-                      }
+                      disabled={submitting}
                     >
                       {submitting ? (
                         <>
                           <span className="meal-button-spinner" />
-
                           Saving...
                         </>
                       ) : (
                         <>
-                          {editingMeal ? (
-                            <FiEdit3 />
-                          ) : (
-                            <FiPlus />
-                          )}
+                          {editingMeal ? <FiEdit3 /> : <FiPlus />}
 
-                          {editingMeal
-                            ? "Update Meal"
-                            : "Add Meal"}
+                          {editingMeal ? "Update Meal" : "Add Meal"}
                         </>
                       )}
                     </button>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+
 import "./Cart.css";
 
 import {
@@ -24,13 +25,21 @@ import { useCart } from "../../context/CartContext";
 
 const Cart = () => {
   const navigate = useNavigate();
-
   const { setCartCount, refreshCart } = useCart();
 
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [busyId, setBusyId] = useState(null);
+
+  // =====================================
+  // BACKEND IMAGE BASE URL
+  // =====================================
+
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1";
+
+  const API_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
 
   // =====================================
   // FETCH CART
@@ -96,9 +105,13 @@ const Cart = () => {
   const getMealId = (item) => {
     if (item.mealId?._id) return item.mealId._id;
 
-    if (typeof item.mealId === "string") return item.mealId;
+    if (typeof item.mealId === "string") {
+      return item.mealId;
+    }
 
-    if (item.meal?._id) return item.meal._id;
+    if (item.meal?._id) {
+      return item.meal._id;
+    }
 
     return "";
   };
@@ -115,6 +128,10 @@ const Cart = () => {
     return meal.price || item.price || 0;
   };
 
+  // =====================================
+  // IMAGE URL
+  // =====================================
+
   const getImage = (item) => {
     const meal = getMeal(item);
 
@@ -124,13 +141,17 @@ const Cart = () => {
       return "https://placehold.co/600x400?text=Meal";
     }
 
-    image = image.replace(/\\/g, "/");
+    image = String(image).replace(/\\/g, "/");
 
-    if (!image.startsWith("http")) {
-      image = `http://localhost:4000/${image}`;
+    // Already complete URL
+    if (image.startsWith("http://") || image.startsWith("https://")) {
+      return image;
     }
 
-    return image;
+    // Remove leading slash to avoid //
+    image = image.replace(/^\/+/, "");
+
+    return `${API_ORIGIN}/${image}`;
   };
 
   // =====================================
@@ -148,7 +169,6 @@ const Cart = () => {
 
       if (res.data.success) {
         await fetchCart();
-
         refreshCart?.();
       }
     } catch (err) {
@@ -204,7 +224,6 @@ const Cart = () => {
         toast.success("Item removed from cart");
 
         await fetchCart();
-
         refreshCart?.();
       }
     } catch (err) {
@@ -231,9 +250,7 @@ const Cart = () => {
         toast.success("Cart cleared");
 
         setCartItems([]);
-
         setCartCount?.(0);
-
         refreshCart?.();
       }
     } catch (err) {
@@ -266,7 +283,7 @@ const Cart = () => {
   const grandTotal = subtotal + deliveryFee + tax;
 
   // =====================================
-  // LOADING UI (skeleton)
+  // LOADING UI
   // =====================================
 
   if (loading) {
@@ -286,6 +303,7 @@ const Cart = () => {
                 {[1, 2, 3].map((n) => (
                   <div className="skeleton-card" key={n}>
                     <div className="skeleton skeleton-img" />
+
                     <div className="skeleton-lines">
                       <div className="skeleton skeleton-line w-60" />
                       <div className="skeleton skeleton-line w-30" />
@@ -323,10 +341,14 @@ const Cart = () => {
             className="empty-cart-box"
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              duration: 0.5,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           >
             <div className="dabba">
               <div className="dabba-lid" />
+
               <div className="dabba-body">
                 <FaUtensils className="dabba-icon" />
               </div>
@@ -372,6 +394,7 @@ const Cart = () => {
 
             <div className="cart-heading">
               <h1>Your Cart</h1>
+
               <span className="cart-subheading">
                 {totalQty} {totalQty === 1 ? "item" : "items"} from your
                 favourite kitchens
@@ -384,11 +407,8 @@ const Cart = () => {
               <AnimatePresence initial={false}>
                 {cartItems.map((item, index) => {
                   const mealId = getMealId(item);
-
                   const title = getTitle(item);
-
                   const image = getImage(item);
-
                   const price = getPrice(item);
 
                   const itemBusy = updating && busyId === mealId;
@@ -398,18 +418,37 @@ const Cart = () => {
                       key={mealId || index}
                       className={`cart-card ${itemBusy ? "is-busy" : ""}`}
                       layout
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      initial={{
+                        opacity: 0,
+                        y: 40,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                      }}
                       exit={{
                         opacity: 0,
                         x: -60,
                         scale: 0.94,
-                        transition: { duration: 0.28 },
+                        transition: {
+                          duration: 0.28,
+                        },
                       }}
-                      transition={{ delay: index * 0.06, duration: 0.4 }}
+                      transition={{
+                        delay: index * 0.06,
+                        duration: 0.4,
+                      }}
                     >
                       <div className="cart-img-wrap">
-                        <img src={image} alt={title} className="cart-img" />
+                        <img
+                          src={image}
+                          alt={title}
+                          className="cart-img"
+                          onError={(e) => {
+                            e.currentTarget.src =
+                              "https://placehold.co/600x400?text=Meal";
+                          }}
+                        />
                       </div>
 
                       <div className="cart-details">
@@ -427,6 +466,7 @@ const Cart = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
+
                               decreaseQty(mealId, item.quantity);
                             }}
                           >
@@ -442,6 +482,7 @@ const Cart = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
+
                               increaseQty(mealId, item.quantity);
                             }}
                           >
@@ -456,6 +497,7 @@ const Cart = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
+
                               removeItem(mealId);
                             }}
                           >
@@ -466,6 +508,7 @@ const Cart = () => {
 
                       <div className="cart-line-total">
                         <span className="line-total-label">Total</span>
+
                         <h3>₹{(price * (item.quantity || 1)).toFixed(0)}</h3>
                       </div>
                     </motion.div>
@@ -475,14 +518,23 @@ const Cart = () => {
             </div>
 
             {/* =========================
-                ORDER SUMMARY — receipt style
+                ORDER SUMMARY
             ========================== */}
 
             <motion.div
               className="cart-summary"
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              initial={{
+                opacity: 0,
+                x: 40,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
+              transition={{
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <div className="ticket-stamp">
                 <span>Lucknow</span>
@@ -496,18 +548,22 @@ const Cart = () => {
 
               <div className="summary-row">
                 <span>Items ({totalQty})</span>
+
                 <strong>₹{subtotal.toFixed(2)}</strong>
               </div>
 
               <div className="summary-row">
                 <span>
-                  <FaTruck className="row-icon" /> Delivery Fee
+                  <FaTruck className="row-icon" />
+                  Delivery Fee
                 </span>
+
                 <strong>₹{deliveryFee.toFixed(2)}</strong>
               </div>
 
               <div className="summary-row">
                 <span>GST (5%)</span>
+
                 <strong>₹{tax.toFixed(2)}</strong>
               </div>
 
@@ -515,6 +571,7 @@ const Cart = () => {
 
               <div className="total-row">
                 <span>Grand Total</span>
+
                 <h2>₹{grandTotal.toFixed(2)}</h2>
               </div>
 
@@ -543,10 +600,12 @@ const Cart = () => {
                   <FaUtensils />
                   <span>Fresh Homemade Meals</span>
                 </div>
+
                 <div className="feature-item">
                   <FaTruck />
                   <span>Fast Local Delivery</span>
                 </div>
+
                 <div className="feature-item">
                   <FaShieldAlt />
                   <span>Secure Payments</span>

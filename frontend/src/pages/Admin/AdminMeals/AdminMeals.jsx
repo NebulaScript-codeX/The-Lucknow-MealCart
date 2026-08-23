@@ -141,6 +141,8 @@ const AdminMeals = () => {
     [meals],
   );
 
+  // ================= IMAGE URL =================
+  // Uses VITE_API_BASE_URL instead of hardcoded localhost.
   const getImageUrl = (image) => {
     if (!image) {
       return null;
@@ -154,7 +156,12 @@ const AdminMeals = () => {
       .replace(/\\/g, "/")
       .replace(/^\/+/, "");
 
-    return `http://localhost:4000/${normalizedPath}`;
+    const apiBaseUrl =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1";
+
+    const serverBaseUrl = apiBaseUrl.replace(/\/api\/v1\/?$/, "");
+
+    return `${serverBaseUrl}/${normalizedPath}`;
   };
 
   const getKitchenName = (kitchen) => {

@@ -65,6 +65,30 @@ const getStatusClass = (status) => {
   return `status-${status.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 };
 
+/**
+ * Converts stored image path into a production-safe URL.
+ *
+ * IMPORTANT:
+ * Never use:
+ * http://localhost:4000
+ *
+ * axiosInstance already knows your backend base URL.
+ */
+const getImageUrl = (image) => {
+  if (!image) return null;
+
+  const cleanImage = String(image).replace(/\\/g, "/").replace(/^\/+/, "");
+
+  // If backend already returned a complete URL
+  if (cleanImage.startsWith("http://") || cleanImage.startsWith("https://")) {
+    return cleanImage;
+  }
+
+  const baseURL = axiosInstance.defaults?.baseURL || "";
+
+  return `${baseURL.replace(/\/+$/, "")}/${cleanImage}`;
+};
+
 // =====================================================
 // COMPONENT
 // =====================================================
@@ -245,9 +269,17 @@ const CustomerDashboard = () => {
 
           <motion.section
             className="dashboard-hero"
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            initial={{
+              opacity: 0,
+              y: 25,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            transition={{
+              duration: 0.6,
+            }}
           >
             <div className="hero-glow hero-glow-one" />
             <div className="hero-glow hero-glow-two" />
@@ -380,9 +412,6 @@ const CustomerDashboard = () => {
                 description="Explore kitchens and subscription plans."
               />
 
-              {/* ==============================
-                  REVIEWS & RATINGS — ADDED
-              ============================== */}
               <QuickAction
                 to="/reviews"
                 icon={<FaStar />}
@@ -424,7 +453,7 @@ const CustomerDashboard = () => {
                     return (
                       <motion.div
                         className="order-item"
-                        key={order._id}
+                        key={order._id || index}
                         initial={{
                           opacity: 0,
                           x: -15,
@@ -475,9 +504,7 @@ const CustomerDashboard = () => {
 
                             <span>•</span>
 
-                            <strong>
-                              {formatCurrency(order.totalAmount)}
-                            </strong>
+                            <strong>{formatCurrency(order.totalAmount)}</strong>
                           </div>
                         </div>
                       </motion.div>
@@ -506,7 +533,7 @@ const CustomerDashboard = () => {
                   {recentNotifications.map((notification, index) => (
                     <motion.div
                       className="notification-item"
-                      key={notification._id}
+                      key={notification._id || index}
                       initial={{
                         opacity: 0,
                         x: 15,
@@ -576,17 +603,12 @@ const CustomerDashboard = () => {
 
                     if (!meal) return null;
 
-                    const image = meal.image
-                      ? `http://localhost:4000/${meal.image.replace(
-                          /\\/g,
-                          "/",
-                        )}`
-                      : null;
+                    const image = getImageUrl(meal.image);
 
                     return (
                       <motion.div
                         className="favorite-card"
-                        key={favorite._id}
+                        key={favorite._id || index}
                         initial={{
                           opacity: 0,
                           y: 15,
@@ -604,11 +626,15 @@ const CustomerDashboard = () => {
                           className="favorite-image"
                         >
                           {image ? (
-                            <img src={image} alt={meal.title} />
+                            <img
+                              src={image}
+                              alt={meal.title || "Meal"}
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
                           ) : (
-                            <div className="favorite-image-placeholder">
-                              🍲
-                            </div>
+                            <div className="favorite-image-placeholder">🍲</div>
                           )}
 
                           <span className="favorite-heart">
@@ -617,7 +643,7 @@ const CustomerDashboard = () => {
                         </Link>
 
                         <div className="favorite-content">
-                          <h3>{meal.title}</h3>
+                          <h3>{meal.title || "Meal"}</h3>
 
                           <span className="favorite-category">
                             {meal.category || "Homestyle meal"}
@@ -705,7 +731,9 @@ const CustomerDashboard = () => {
                                 isActive ? "active" : "inactive"
                               }`}
                             >
-                              {isActive ? "Active" : subscription.status}
+                              {isActive
+                                ? "Active"
+                                : subscription.status || "Inactive"}
                             </span>
                           </div>
 
@@ -714,8 +742,7 @@ const CustomerDashboard = () => {
                           <div className="subscription-details">
                             <span>
                               <FaCalendarAlt />
-                              Next:{" "}
-                              {formatDate(subscription.nextDeliveryDate)}
+                              Next: {formatDate(subscription.nextDeliveryDate)}
                             </span>
 
                             <span>
@@ -773,9 +800,7 @@ const CustomerDashboard = () => {
               <div>
                 <span>Delivery address</span>
 
-                <strong>
-                  {customer.addresses?.[0] || "No address added"}
-                </strong>
+                <strong>{customer.addresses?.[0] || "No address added"}</strong>
               </div>
             </div>
 
@@ -834,7 +859,6 @@ const DashboardStat = ({ icon, value, label, delay = 0 }) => {
 
       <div className="stat-content">
         <strong>{value}</strong>
-
         <span>{label}</span>
       </div>
     </motion.div>
@@ -852,7 +876,6 @@ const QuickAction = ({ to, icon, title, description }) => {
 
       <div className="quick-action-content">
         <h3>{title}</h3>
-
         <p>{description}</p>
       </div>
 

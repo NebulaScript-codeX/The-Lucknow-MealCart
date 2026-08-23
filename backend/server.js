@@ -6,8 +6,9 @@ dotenv.config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const path = require("path");
 
-// Import DB Connection Function AFTER dotenv
+// Import DB Connection Function
 const connectToDB = require("./src/config/connectToDB");
 
 // Import Routes
@@ -36,6 +37,7 @@ connectToDB();
 app.use(express.json());
 app.use(cookieParser());
 
+// CORS
 app.use(
   cors({
     origin:
@@ -44,12 +46,16 @@ app.use(
   }),
 );
 
-// Static Folder for Images
-app.use("/uploads", express.static("uploads"));
+// Static Folder for Uploaded Images
+// Production-safe absolute path
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Health Check
 app.get("/health", (req, res) => {
-  res.send("Server Is Running Perfectly...");
+  res.status(200).json({
+    success: true,
+    message: "Server Is Running Perfectly...",
+  });
 });
 
 // Routes
@@ -72,6 +78,6 @@ app.use("/api/v1/customer", customerDashboardRoutes);
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
-  console.log("Server Started!");
-  console.log(`Access At: http://localhost:${PORT}/health`);
+  console.log(`Server Started On Port ${PORT}`);
+  console.log(`Health Check: /health`);
 });

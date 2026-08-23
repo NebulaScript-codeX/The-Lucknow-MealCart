@@ -65,7 +65,10 @@ export default function Testimonials() {
                   <div className="avatar">
                     {review.customerId?.profileImage ? (
                       <img
-                        src={`http://localhost:4000/${review.customerId.profileImage}`}
+                        src={`https://the-lucknow-mealcart.onrender.com/${review.customerId.profileImage.replace(
+                          /\\/g,
+                          "/",
+                        )}`}
                         alt={review.customerId?.name}
                       />
                     ) : (

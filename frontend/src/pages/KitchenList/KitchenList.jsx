@@ -1,9 +1,44 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import axiosInstance from "../../utils/axiosInstance";
+
 import "./KitchenList.css";
+
+// =====================================================
+// IMAGE HELPER
+// =====================================================
+
+const getImageUrl = (image) => {
+  if (!image) {
+    return "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=500&q=80";
+  }
+
+  // Already a complete URL
+  if (image.startsWith("http://") || image.startsWith("https://")) {
+    return image;
+  }
+
+  // Normalize Windows path
+  const normalizedPath = image.replace(/\\/g, "/");
+
+  // Get backend base URL from axiosInstance
+  const baseURL = axiosInstance.defaults?.baseURL || "";
+
+  // Remove trailing slash from base URL
+  const cleanBaseURL = baseURL.replace(/\/+$/, "");
+
+  // Remove leading slash from image path
+  const cleanImagePath = normalizedPath.replace(/^\/+/, "");
+
+  return `${cleanBaseURL}/${cleanImagePath}`;
+};
+
+// =====================================================
+// SKELETON CARD
+// =====================================================
 
 function SkeletonCard() {
   return (
@@ -15,62 +50,100 @@ function SkeletonCard() {
   );
 }
 
+// =====================================================
+// KITCHEN CARD
+// =====================================================
+
 function KitchenCard({ kitchen, index }) {
   const navigate = useNavigate();
 
-  // Try all possible backend field names
-  // so whichever exists in your model will be used.
   const kitchenName =
-    kitchen.name || kitchen.title || kitchen.kitchenName || "Kitchen";
+    kitchen?.name || kitchen?.title || kitchen?.kitchenName || "Kitchen";
 
-  const imageUrl = kitchen.image
-    ? `http://localhost:4000/${kitchen.image.replace(/\\/g, "/")}`
-    : "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=500&q=80";
+  const imageUrl = getImageUrl(kitchen?.image);
+
+  const rating =
+    kitchen?.rating !== undefined && kitchen?.rating !== null
+      ? Number(kitchen.rating)
+      : null;
+
+  const cuisine = kitchen?.cuisine || "Fresh Homemade Meals • Multi-Cuisine";
+
+  const deliveryTime = kitchen?.deliveryTime || "30-40 mins";
+
+  const location = kitchen?.location || kitchen?.area || "Lucknow";
+
+  const isOpen = kitchen?.isOpen !== false;
+
+  const handleKitchenClick = () => {
+    if (kitchen?._id) {
+      navigate(`/kitchen/${kitchen._id}`);
+    }
+  };
 
   return (
     <div
       className="kitchen-card"
-      style={{ animationDelay: `${(index % 8) * 60}ms` }}
-      onClick={() => navigate(`/kitchen/${kitchen._id}`)}
+      style={{
+        animationDelay: `${(index % 8) * 60}ms`,
+      }}
+      onClick={handleKitchenClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          handleKitchenClick();
+        }
+      }}
     >
+      {/* IMAGE */}
       <div className="kitchen-card-img-wrap">
-        <img src={imageUrl} alt={kitchenName} />
+        <img
+          src={imageUrl}
+          alt={kitchenName}
+          onError={(event) => {
+            event.currentTarget.src =
+              "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=500&q=80";
+          }}
+        />
 
-        {kitchen.isOpen !== false ? (
+        {isOpen ? (
           <span className="kitchen-badge kitchen-badge-open">Open</span>
         ) : (
           <span className="kitchen-badge kitchen-badge-closed">Closed</span>
         )}
       </div>
 
+      {/* CONTENT */}
       <div className="kitchen-card-body">
         <div className="kitchen-card-top">
           <h3>{kitchenName}</h3>
 
-          {kitchen.rating && (
-            <span className="kitchen-rating">
-              ★ {Number(kitchen.rating).toFixed(1)}
-            </span>
+          {rating !== null && !Number.isNaN(rating) && (
+            <span className="kitchen-rating">★ {rating.toFixed(1)}</span>
           )}
         </div>
 
-        <p className="kitchen-cuisine">
-          {kitchen.cuisine || "Fresh Homemade Meals • Multi-Cuisine"}
-        </p>
+        <p className="kitchen-cuisine">{cuisine}</p>
 
         <div className="kitchen-card-meta">
-          <span>{kitchen.deliveryTime || "30-40 mins"}</span>
+          <span>{deliveryTime}</span>
 
           <span className="dot">•</span>
 
-          <span>{kitchen.location || kitchen.area || "Lucknow"}</span>
+          <span>{location}</span>
         </div>
       </div>
 
+      {/* HOVER CTA */}
       <div className="kitchen-card-hover-cta">View Menu →</div>
     </div>
   );
 }
+
+// =====================================================
+// MAIN COMPONENT
+// =====================================================
 
 export default function KitchenList() {
   const [kitchens, setKitchens] = useState([]);
@@ -78,45 +151,105 @@ export default function KitchenList() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
+  // ===================================================
+  // FETCH KITCHENS
+  // ===================================================
+
   useEffect(() => {
+    let mounted = true;
+
     const fetchKitchens = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const res = await axiosInstance.get("/kitchen/all");
 
-        setKitchens(res.data?.data || res.data?.kitchens || res.data || []);
-      } catch (err) {
-        console.error(err);
+        console.log("Kitchen API Response:", res.data);
 
-        setError("Unable to load kitchens. Please try again later.");
+        const responseData = res.data;
+
+        let kitchenData = [];
+
+        if (Array.isArray(responseData)) {
+          kitchenData = responseData;
+        } else if (Array.isArray(responseData?.data)) {
+          kitchenData = responseData.data;
+        } else if (Array.isArray(responseData?.kitchens)) {
+          kitchenData = responseData.kitchens;
+        } else if (Array.isArray(responseData?.data?.kitchens)) {
+          kitchenData = responseData.data.kitchens;
+        }
+
+        if (mounted) {
+          setKitchens(kitchenData);
+        }
+      } catch (err) {
+        console.error("Fetch Kitchens Error:", err);
+
+        if (mounted) {
+          setError(
+            err?.response?.data?.message ||
+              "Unable to load kitchens. Please try again later.",
+          );
+
+          setKitchens([]);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchKitchens();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  // ===================================================
+  // SEARCH FILTER
+  // ===================================================
+
   const filteredKitchens = useMemo(() => {
-    if (!search.trim()) return kitchens;
+    const query = search.trim().toLowerCase();
 
-    const q = search.toLowerCase();
+    if (!query) {
+      return kitchens;
+    }
 
-    return kitchens.filter((k) => {
-      const name = k.name || k.title || k.kitchenName || "";
+    return kitchens.filter((kitchen) => {
+      const name = String(
+        kitchen?.name || kitchen?.title || kitchen?.kitchenName || "",
+      ).toLowerCase();
+
+      const cuisine = String(kitchen?.cuisine || "").toLowerCase();
+
+      const location = String(
+        kitchen?.location || kitchen?.area || "",
+      ).toLowerCase();
 
       return (
-        name.toLowerCase().includes(q) ||
-        k.cuisine?.toLowerCase().includes(q) ||
-        k.location?.toLowerCase().includes(q)
+        name.includes(query) ||
+        cuisine.includes(query) ||
+        location.includes(query)
       );
     });
   }, [kitchens, search]);
 
+  // ===================================================
+  // RENDER
+  // ===================================================
+
   return (
     <>
       <Navbar />
+
+      {/* =================================================
+          HERO
+      ================================================= */}
 
       <section className="kitchen-list-hero">
         <span className="kitchen-list-tag">✦ All Kitchens</span>
@@ -130,8 +263,15 @@ export default function KitchenList() {
           what's cooking today.
         </p>
 
+        {/* SEARCH */}
         <div className="kitchen-search-bar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
             <circle
               cx="11"
               cy="11"
@@ -139,6 +279,7 @@ export default function KitchenList() {
               stroke="currentColor"
               strokeWidth="2"
             />
+
             <path
               d="M21 21l-4.3-4.3"
               stroke="currentColor"
@@ -151,30 +292,73 @@ export default function KitchenList() {
             type="text"
             placeholder="Search kitchens, cuisines or locations..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
+
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+              style={{
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: "18px",
+              }}
+            >
+              ×
+            </button>
+          )}
         </div>
       </section>
 
+      {/* =================================================
+          KITCHEN LIST
+      ================================================= */}
+
       <section className="kitchen-list-section">
+        {/* ERROR */}
         {error && <div className="kitchen-error">{error}</div>}
 
+        {/* LOADING */}
         {loading ? (
           <div className="kitchen-grid">
-            {Array(8)
-              .fill(0)
-              .map((_, i) => (
-                <SkeletonCard key={i} />
-              ))}
+            {Array.from({ length: 8 }).map((_, index) => (
+              <SkeletonCard key={index} />
+            ))}
           </div>
         ) : filteredKitchens.length === 0 ? (
+          /* EMPTY */
           <div className="kitchen-empty">
-            <p>No kitchens found 🍽️</p>
+            <p>
+              {search
+                ? `No kitchens found for "${search}" 🍽️`
+                : "No kitchens available right now 🍽️"}
+            </p>
+
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                style={{
+                  marginTop: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                Clear Search
+              </button>
+            )}
           </div>
         ) : (
+          /* RESULTS */
           <div className="kitchen-grid">
-            {filteredKitchens.map((kitchen, i) => (
-              <KitchenCard key={kitchen._id} kitchen={kitchen} index={i} />
+            {filteredKitchens.map((kitchen, index) => (
+              <KitchenCard
+                key={kitchen?._id || index}
+                kitchen={kitchen}
+                index={index}
+              />
             ))}
           </div>
         )}
