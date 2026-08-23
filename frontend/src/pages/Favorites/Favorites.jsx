@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../components/Navbar/Navbar";
-import Footer from "../../components/Footer/Footer";
 import axiosInstance from "../../utils/axiosInstance";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
@@ -21,22 +19,39 @@ import "./Favorites.css";
 // IMAGE URL HELPER
 // =====================================================
 
+const FALLBACK_IMAGE = "https://placehold.co/500x500/png?text=Meal";
+
 const getImageUrl = (image) => {
   if (!image) {
-    return "https://placehold.co/500x500?text=Meal";
+    return FALLBACK_IMAGE;
+  }
+
+  // Make sure value is a string
+  const imagePath = String(image).trim();
+
+  if (!imagePath) {
+    return FALLBACK_IMAGE;
   }
 
   // Already a complete URL
-  if (image.startsWith("http://") || image.startsWith("https://")) {
-    return image;
+  if (
+    imagePath.startsWith("http://") ||
+    imagePath.startsWith("https://") ||
+    imagePath.startsWith("data:image/")
+  ) {
+    return imagePath;
   }
 
-  // Get backend base URL from axiosInstance
+  // Normalize Windows-style paths
+  const cleanImage = imagePath.replace(/\\/g, "/").replace(/^\/+/, "");
+
+  // Backend base URL from axiosInstance
   const baseURL = axiosInstance.defaults.baseURL || "";
 
-  const cleanImage = image.replace(/\\/g, "/").replace(/^\/+/, "");
+  // Remove trailing slash from backend URL
+  const cleanBaseURL = baseURL.replace(/\/+$/, "");
 
-  return `${baseURL.replace(/\/+$/, "")}/${cleanImage}`;
+  return `${cleanBaseURL}/${cleanImage}`;
 };
 
 // =====================================================
@@ -69,6 +84,7 @@ function Favorites() {
         setFavorites(Array.isArray(res.data.data) ? res.data.data : []);
       } else {
         setFavorites([]);
+
         toast.error(res.data?.message || "Unable to load favorites.");
       }
     } catch (err) {
@@ -123,6 +139,21 @@ function Favorites() {
   };
 
   // ===================================================
+  // IMAGE ERROR HANDLER
+  // ===================================================
+
+  const handleImageError = (event) => {
+    const img = event.currentTarget;
+
+    if (img.dataset.fallbackApplied === "true") {
+      return;
+    }
+
+    img.dataset.fallbackApplied = "true";
+    img.src = FALLBACK_IMAGE;
+  };
+
+  // ===================================================
   // LOADING
   // ===================================================
 
@@ -134,6 +165,7 @@ function Favorites() {
         <main className="favorite-loading">
           <div>
             <div className="favorite-loading-spinner" />
+
             <p>Loading Favorites...</p>
           </div>
         </main>
@@ -264,12 +296,9 @@ function Favorites() {
                     <img
                       src={imageUrl}
                       alt={meal.title || "Meal"}
+                      loading="lazy"
                       onClick={() => navigate(`/meal/${meal._id}`)}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          "https://placehold.co/500x500?text=Meal";
-                      }}
+                      onError={handleImageError}
                     />
 
                     {/* CARD BODY */}
