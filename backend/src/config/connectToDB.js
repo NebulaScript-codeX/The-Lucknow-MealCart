@@ -1,24 +1,26 @@
+const dns = require("dns");
+
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 const mongoose = require("mongoose");
 
-// Get MongoDB URL from .env file
 const DB_URL =
   process.env.MONGO_URI || "mongodb://localhost:27017/lucknow_meal_cart";
 
-// Function to connect MongoDB
 async function connectToDB() {
   try {
-    // Connect to MongoDB
+    console.log("🔍 DB_URL starts with:", DB_URL.substring(0, 30));
+
     await mongoose.connect(DB_URL);
 
     console.log("✅ Connected To Database Successfully!");
+    console.log("🔗 MongoDB Host:", mongoose.connection.host);
+    console.log("📂 Connected Database:", mongoose.connection.name);
   } catch (err) {
     console.log("❌ Failed To Connect Database!");
     console.log(err.message);
-
-    // Stop Server if DB connection fails
     process.exit(1);
   }
 }
 
-// Export Function
 module.exports = connectToDB;

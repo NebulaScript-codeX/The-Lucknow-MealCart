@@ -1,9 +1,13 @@
-const express = require("express");
 const dotenv = require("dotenv");
+
+// Load Environment Variables FIRST
+dotenv.config();
+
+const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
-// Import DB Connection Function
+// Import DB Connection Function AFTER dotenv
 const connectToDB = require("./src/config/connectToDB");
 
 // Import Routes
@@ -25,19 +29,13 @@ const customerDashboardRoutes = require("./src/routes/customerDashboardRoutes");
 // Create Express App
 const app = express();
 
-// Load Environment Variables
-dotenv.config();
-
 // Connect Database
 connectToDB();
 
-// Middleware to accept JSON data
+// Middleware
 app.use(express.json());
-
-// Middleware to handle cookies
 app.use(cookieParser());
 
-// Middleware to allow frontend requests
 app.use(
   cors({
     origin:
@@ -49,7 +47,7 @@ app.use(
 // Static Folder for Images
 app.use("/uploads", express.static("uploads"));
 
-// Health Check Route
+// Health Check
 app.get("/health", (req, res) => {
   res.send("Server Is Running Perfectly...");
 });
@@ -58,7 +56,6 @@ app.get("/health", (req, res) => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/kitchen", kitchenRoutes);
 app.use("/api/v1/meal", mealRoutes);
-app.use("/uploads", express.static("uploads"));
 app.use("/api/v1/order", orderRoutes);
 app.use("/api/v1/plan", planRoutes);
 app.use("/api/v1/cart", cartRoutes);
@@ -70,6 +67,7 @@ app.use("/api/v1/home", homeRoutes);
 app.use("/api/v1/contact", contactRoutes);
 app.use("/api/v1/provider", providerRoutes);
 app.use("/api/v1/customer", customerDashboardRoutes);
+
 // Start Server
 const PORT = process.env.PORT || 4000;
 
