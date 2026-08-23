@@ -16,7 +16,7 @@ import {
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 import axiosInstance from "../../utils/axiosInstance";
-import "./MySubscriptions.css";
+import "./Mysubscriptions.css";
 
 const STATUS_META = {
   active: { label: "Active", cls: "is-active" },
