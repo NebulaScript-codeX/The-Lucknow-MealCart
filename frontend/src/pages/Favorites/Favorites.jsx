@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
+import Navbar from "../../components/Navbar/Navbar";
+import Footer from "../../components/Footer/Footer";
 
 import {
   FaHeart,
