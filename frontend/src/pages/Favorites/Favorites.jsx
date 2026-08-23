@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { useCart } from "../../context/CartContext";
 import toast from "react-hot-toast";
+
 import Navbar from "../../components/Navbar/Navbar";
 import Footer from "../../components/Footer/Footer";
 
@@ -47,11 +48,11 @@ const getImageUrl = (image) => {
   // Normalize Windows-style paths
   const cleanImage = imagePath.replace(/\\/g, "/").replace(/^\/+/, "");
 
-  // Backend base URL from axiosInstance
+  // Backend base URL from axiosInstance (this includes /api/v1, so strip it)
   const baseURL = axiosInstance.defaults.baseURL || "";
 
-  // Remove trailing slash from backend URL
-  const cleanBaseURL = baseURL.replace(/\/+$/, "");
+  // Remove trailing slash, then strip any trailing /api/... segment
+  const cleanBaseURL = baseURL.replace(/\/+$/, "").replace(/\/api\/.*$/, "");
 
   return `${cleanBaseURL}/${cleanImage}`;
 };
