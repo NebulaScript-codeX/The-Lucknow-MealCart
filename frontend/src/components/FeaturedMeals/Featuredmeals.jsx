@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axiosInstance from "../../utils/axiosInstance";
 
 import MealCard from "../MealCard/MealCard";
-import "./FeaturedMeals.css";
+import "./Featuredmeals.css";
 
 export default function FeaturedMeals() {
   const [meals, setMeals] = useState([]);
