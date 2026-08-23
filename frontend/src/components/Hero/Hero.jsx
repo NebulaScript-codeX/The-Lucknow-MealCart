@@ -121,7 +121,7 @@ export default function Hero() {
             </button>
             <button
               className="btn-secondary"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/login?mode=register")}
             >
               Become a Provider
               <svg
