@@ -110,7 +110,7 @@ export default function Footer() {
                 </a>
 
                 <a
-                  href="www.linkedin.com/in/shrestha-awasthi-83708634a"
+                  href="https://www.linkedin.com/in/shrestha-awasthi-83708634a/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn"
